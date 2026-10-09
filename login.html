@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minha conta — Nocturnal Chronicles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 1.5rem; color: #f4edf2; background: radial-gradient(ellipse at top, #332033, #100d12 65%); font-family: Outfit, sans-serif; }
+    main { width: min(100%, 440px); padding: 2.4rem; border: 1px solid #49364a; border-radius: 18px; background: rgba(18, 14, 20, .94); box-shadow: 0 20px 80px #0008; }
+    h1 { margin: 0 0 .5rem; color: #e5c979; font: 600 1.8rem Cinzel, serif; text-align: center; }
+    .intro { margin: 0 0 1.8rem; color: #b8aab7; text-align: center; }
+    label { display: block; margin: 1rem 0 .4rem; color: #e6dce4; }
+    input { width: 100%; padding: .8rem .9rem; border: 1px solid #554558; border-radius: 8px; color: #fff; background: #211923; font: inherit; }
+    input:focus { outline: 2px solid #b99b55; border-color: transparent; }
+    button { width: 100%; margin-top: 1.2rem; padding: .85rem; border: 0; border-radius: 8px; color: #191219; background: #d3b66b; font: 600 1rem Outfit, sans-serif; cursor: pointer; }
+    button:disabled { opacity: .65; cursor: wait; }
+    .back { margin: 1.1rem 0 0; color: #c5b7c4; text-align: center; }
+    a { color: #e5c979; }
+    .message { min-height: 1.4rem; margin: .8rem 0 0; color: #f0b7b7; text-align: center; }
+    .message.success { color: #a9d9b4; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Minha conta</h1>
+    <p class="intro">Entre para continuar sua jornada.</p>
+    <form id="account-form">
+      <div id="name-field" hidden>
+        <label for="name">Nome</label>
+        <input id="name" name="name" autocomplete="name" maxlength="100">
+      </div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required maxlength="255">
+      <label for="password">Senha</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="72">
+      <button id="submit" type="submit">Entrar</button>
+    </form>
+    <p id="forgot-row"><a id="forgot-link" href="?forgot=1">Esqueci minha senha</a></p>
+    <form id="forgot-form" hidden>
+      <label for="forgot-email">Email da sua conta</label>
+      <input id="forgot-email" name="email" type="email" autocomplete="email" required maxlength="255">
+      <button type="submit">Enviar código</button>
+    </form>
+    <form id="reset-form" hidden>
+      <label for="reset-email">Email da sua conta</label>
+      <input id="reset-email" name="email" type="email" autocomplete="email" required maxlength="255" readonly>
+      <label for="reset-code">Código enviado por e-mail</label>
+      <input id="reset-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" required maxlength="6">
+      <label for="new-password">Nova senha</label>
+      <input id="new-password" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="72">
+      <label for="confirm-password">Confirme a nova senha</label>
+      <input id="confirm-password" name="confirm_password" type="password" autocomplete="new-password" required minlength="8" maxlength="72">
+      <button type="submit">Redefinir senha</button>
+    </form>
+    <p id="message" class="message" role="status" aria-live="polite"></p>
+    <p id="switch-row" class="switch"><span id="switch-label">Ainda não tem conta?</span> <a id="switch-mode" href="#">Criar conta</a></p>
+    <p class="back"><a href="/">Voltar à loja</a></p>
+  </main>
+  <script>
+    const form = document.querySelector('#account-form');
+    const nameField = document.querySelector('#name-field');
+    const nameInput = document.querySelector('#name');
+    const submit = document.querySelector('#submit');
+    const message = document.querySelector('#message');
+    const switchMode = document.querySelector('#switch-mode');
+    const switchLabel = document.querySelector('#switch-label');
+    const query = new URLSearchParams(location.search);
+    const forgotForm = document.querySelector('#forgot-form');
+    const forgotLink = document.querySelector('#forgot-link');
+    const forgotEmail = document.querySelector('#forgot-email');
+    const resetForm = document.querySelector('#reset-form');
+    const resetEmail = document.querySelector('#reset-email');
+    let registering = query.get('mode') === 'register';
+    let userSession = false;
+    const shouldResumeCheckout = query.get('next') === 'checkout';
+    let recoveryMode = query.has('forgot');
+    let enteringResetCode = false;
+
+    function resumeCheckout() {
+      location.replace(shouldResumeCheckout ? '/?checkout=1#catalogo-livros' : '/');
+    }
+
+    function renderMode() {
+      if (recoveryMode) {
+        form.hidden = true;
+        document.querySelector('#switch-row').hidden = true;
+        document.querySelector('#forgot-row').hidden = true;
+        forgotForm.hidden = enteringResetCode;
+        resetForm.hidden = !enteringResetCode;
+        return;
+      }
+      form.hidden = false;
+      forgotForm.hidden = true;
+      resetForm.hidden = true;
+      nameField.hidden = !registering;
+      nameInput.required = registering;
+      form.querySelectorAll('input').forEach((input) => {
+        input.disabled = userSession;
+      });
+      submit.textContent = userSession ? 'Sair da conta' : (registering ? 'Criar conta' : 'Entrar');
+      switchLabel.textContent = registering ? 'Já tem uma conta?' : 'Ainda não tem conta?';
+      switchMode.textContent = registering ? 'Entrar' : 'Criar conta';
+      document.querySelector('#switch-row').hidden = userSession;
+      document.querySelector('#forgot-row').hidden = registering || userSession;
+      document.querySelector('#password').autocomplete = registering ? 'new-password' : 'current-password';
+    }
+
+    if (recoveryMode) {
+      document.querySelector('h1').textContent = 'Recuperar senha';
+      document.querySelector('.intro').textContent = 'Enviaremos um código para o e-mail da sua conta.';
+    }
+    renderMode();
+    forgotLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      location.href = '/login?forgot=1';
+    });
+    switchMode.addEventListener('click', (event) => {
+      event.preventDefault();
+      registering = !registering;
+      message.textContent = '';
+      message.className = 'message';
+      renderMode();
+    });
+
+    const existingToken = localStorage.getItem('nocturnal_user_token');
+    if (existingToken && !recoveryMode) {
+      fetch('/api/auth/user/me', { headers: { Authorization: `Bearer ${existingToken}` } })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('Sessão expirada.');
+          const data = await response.json();
+          userSession = true;
+          message.textContent = `Você está conectada como ${data.user.name}.`;
+          message.classList.add('success');
+          renderMode();
+          resumeCheckout();
+        })
+        .catch(() => localStorage.removeItem('nocturnal_user_token'));
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (userSession) {
+        localStorage.removeItem('nocturnal_user_token');
+        userSession = false;
+        message.textContent = 'Você saiu da sua conta.';
+        message.className = 'message success';
+        form.reset();
+        renderMode();
+        return;
+      }
+
+      submit.disabled = true;
+      message.textContent = '';
+      message.className = 'message';
+      const payload = Object.fromEntries(new FormData(form));
+      const endpoint = registering ? '/api/auth/user/register' : '/api/auth/user/login';
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Não foi possível entrar.');
+        localStorage.setItem('nocturnal_user_token', data.token);
+        userSession = true;
+        message.textContent = registering ? 'Conta criada. Você já está conectada.' : `Bem-vinda de volta, ${data.user.name}.`;
+        message.className = 'message success';
+        form.reset();
+        registering = false;
+        renderMode();
+        resumeCheckout();
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    forgotForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const button = forgotForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      message.className = 'message';
+      message.textContent = 'Enviando código...';
+      try {
+        const response = await fetch('/api/auth/user/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: forgotEmail.value.trim() })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Não foi possível enviar o código.');
+        message.textContent = 'Se o endereço estiver cadastrado, você receberá um código. Digite-o abaixo para escolher uma nova senha.';
+        message.classList.add('success');
+        resetEmail.value = forgotEmail.value.trim();
+        enteringResetCode = true;
+        renderMode();
+        resetForm.elements.code.focus();
+      } catch (error) {
+        message.textContent = error.message || 'Não foi possível enviar o código.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    resetForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const password = resetForm.elements.password.value;
+      if (password !== resetForm.elements.confirm_password.value) {
+        message.textContent = 'As senhas não coincidem.';
+        message.className = 'message';
+        return;
+      }
+      const button = resetForm.querySelector('button[type="submit"]');
+      button.disabled = true;
+      message.textContent = 'Redefinindo senha...';
+      message.className = 'message';
+      try {
+        const response = await fetch('/api/auth/user/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: resetEmail.value.trim(),
+            code: resetForm.elements.code.value.trim(),
+            password
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Não foi possível redefinir a senha.');
+        message.textContent = data.message;
+        message.classList.add('success');
+        form.elements.email.value = resetEmail.value;
+        history.replaceState(null, '', '/login');
+        document.querySelector('h1').textContent = 'Minha conta';
+        document.querySelector('.intro').textContent = 'Entre para continuar sua jornada.';
+        recoveryMode = false;
+        enteringResetCode = false;
+        renderMode();
+      } catch (error) {
+        message.textContent = error.message || 'Não foi possível redefinir a senha.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

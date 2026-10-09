@@ -1,0 +1,5 @@
+.env
+node_modules/
+server/.private-books/
+.env
+node_modules

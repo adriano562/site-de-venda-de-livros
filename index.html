@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+ <head>
+  <script>
+   (function () {
+  var proto = XMLHttpRequest.prototype;
+  var open = proto.open, setRequestHeader = proto.setRequestHeader, send = proto.send;
+  var TOKEN_KEY = 'base44_access_token';
+  var storedTokenHeader = function () {
+    try { return 'Bearer ' + localStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
+  };
+  var forgetStoredToken = function () {
+    try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem('token'); } catch (e) {}
+  };
+
+  proto.open = function (method, url) {
+    this.__b44IsAuthCheck = /\/entities\/User\/me(\?|$)/.test(url);
+    return open.apply(this, arguments);
+  };
+
+  proto.setRequestHeader = function (name, value) {
+    if (this.__b44IsAuthCheck && name.toLowerCase() === 'authorization' && value === storedTokenHeader()) {
+      this.__b44SentToken = value;
+    }
+    return setRequestHeader.call(this, name, value);
+  };
+
+  proto.send = function () {
+    this.addEventListener('loadend', function () {
+      var rejectedTokenStillStored = this.status === 401 && this.__b44SentToken === storedTokenHeader();
+      if (rejectedTokenStillStored) forgetStoredToken();
+    });
+    return send.apply(this, arguments);
+  };
+})();
+  </script>
+  <meta charset="utf-8"/>
+  <link href="/logo.png" rel="icon" type="image/png"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <link href="/manifest.json" rel="manifest"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&amp;family=Outfit:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+  <title>
+   Nocturnal Chronicles — Dark Romance
+  </title>
+  <meta content="Mergulhe em histórias de obsessão, desejo proibido e amor perigoso. Livros de dark romance que vão te consumir." name="description"/>
+  <script crossorigin="" src="/assets/index-N5cddw6f.js" type="module">
+  </script>
+  <link crossorigin="" href="/assets/index-BsoO03mR.css" rel="stylesheet"/>
+  <style>
+   :root {
+    --font-heading: "Cinzel", Georgia, "Times New Roman", serif !important;
+    --font-body: "Outfit", system-ui, sans-serif !important;
+    --font-display: "Cinzel", Georgia, "Times New Roman", serif !important;
+    --font-mono: "Outfit", system-ui, sans-serif !important;
+   }
+   *, *::before, *::after {
+    font-family: "Outfit", system-ui, sans-serif !important;
+   }
+   h1, h2, h3, h4, h5, h6,
+   .font-display,
+   [class*="font-display"],
+   [class*="text-3xl"],
+   [class*="text-4xl"],
+   [class*="text-5xl"],
+   [class*="text-6xl"],
+   [class*="text-7xl"] {
+    font-family: "Cinzel", Georgia, "Times New Roman", serif !important;
+   }
+  </style>
+  <script type="module">
+   if (window.self === window.top) {
+  let lastPath = "";
+  function getPageNameFromPath(path) {
+    const segments = path.split("/").filter(Boolean);
+    return segments[0] || null;
+  }
+  function trackPageView() {
+    const page = window.location.hash.slice(1);
+    const path = page ? `${window.location.pathname}#${page}` : window.location.pathname;
+    if (path === lastPath) return;
+    lastPath = path;
+    const pageName = page === 'catalogo-livros' ? 'livros' : page || getPageNameFromPath(path) || "home";
+    const appId = "6ac45fb9a29c294d2ab14715";
+    fetch('/api/stats/track', {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: path })
+    }).catch(() => {});
+    if (!appId) return;
+    fetch(`/api/app-logs/${appId}/log-user-in-app/${pageName}`, {
+      method: "POST",
+    }).catch(() => {});
+  }
+  const originalPushState = history.pushState.bind(history);
+  history.pushState = function (...args) {
+    originalPushState(...args);
+    trackPageView();
+  };
+  const originalReplaceState = history.replaceState.bind(history);
+  history.replaceState = function (...args) {
+    originalReplaceState(...args);
+    trackPageView();
+  };
+  window.addEventListener("popstate", trackPageView);
+  window.addEventListener("hashchange", trackPageView);
+  trackPageView();
+}
+  </script>
+  <meta content="yes" name="mobile-web-app-capable"/>
+  <meta content="black" name="apple-mobile-web-app-status-bar-style"/>
+  <meta content="Sussurros Obscuros" name="apple-mobile-web-app-title"/>
+  <script async="true" data-app-id="6ac45fb9a29c294d2ab14715" data-platform-url="https://app.base44.com" src="/static/js/badge.js">
+  </script>
+ </head>
+ <body>
+  <div id="root">
+  </div>
+  <a class="account-shortcut" href="/login" aria-label="Entrar ou criar uma conta">
+   <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+    <path d="M20 21a8 8 0 0 0-16 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+   </svg>
+   <span class="account-shortcut-copy">
+    <span class="account-shortcut-welcome">Bem-vindo(a)</span>
+    <span class="account-shortcut-action">Entrar ou Cadastrar</span>
+   </span>
+  </a>
+  <style>
+   .account-shortcut {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 44px;
+    margin-left: 1rem;
+    padding: 0.25rem 0.2rem;
+    color: #f0eeee;
+    text-decoration: none;
+    transition: color 0.2s;
+   }
+   .account-shortcut svg { width: 22px; height: 22px; flex: 0 0 auto; color: #c4121a; }
+   .account-shortcut-copy { display: flex; flex-direction: column; gap: 0.08rem; white-space: nowrap; }
+   .account-shortcut-welcome { color: #aaa5a5; font: 400 0.67rem Outfit, sans-serif; }
+   .account-shortcut-action { color: #f0eeee; font: 500 0.78rem Outfit, sans-serif; }
+   .account-shortcut:hover, .account-shortcut:hover .account-shortcut-action { color: #d3282e; }
+   .account-shortcut:focus-visible { outline: 2px solid #d3282e; outline-offset: 3px; }
+   .brand-logo-link { display: inline-flex !important; align-items: center !important; gap: 0.55rem !important; white-space: nowrap !important; }
+   .brand-logo-image { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid rgba(180, 20, 26, 0.65); border-radius: 50%; object-fit: cover; }
+   .hero-background-image { transform: scale(1.02) !important; }
+   .database-shop { padding: 2.6rem 0 3.5rem; margin-top: 1.2rem; border-top: 1px solid rgba(255,255,255,.1); background: #080808; color: #f2eeee; scroll-margin-top: 6rem; }
+   .database-shop-inner { width: min(100% - 3rem, 1080px); margin: 0 auto; }
+   .database-shop-header { margin-bottom: 1rem; }
+   .database-shop-eyebrow { margin: 0 0 .45rem; color: #df151d; font: 500 .7rem Outfit, sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+   .database-shop-heading { margin: 0; color: #f5f2f2; font: 600 clamp(1.4rem, 2.5vw, 2rem) Outfit, sans-serif !important; letter-spacing: .015em; }
+   .database-shop-intro { margin: .5rem 0 0; color: #aaa2a2; font: 400 .9rem/1.6 Outfit, sans-serif; }
+   .database-shop-promo { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; padding: .7rem 1rem; border: 1px solid #292929; border-radius: 4px; background: #202020; }
+   .database-shop-promo strong { display: block; color: #f2eeee; font: 600 .95rem Outfit, sans-serif; }
+   .database-shop-promo span { display: block; margin-top: .2rem; color: #bcb6b6; font: 400 .78rem Outfit, sans-serif; }
+   .database-shop-newsletter { display: flex; flex: 0 0 min(37%, 280px); align-items: center; min-width: 190px; min-height: 36px; padding: .15rem .25rem .15rem .85rem; border-radius: 22px; background: #fff; }
+   .database-shop-newsletter input { width: 100%; min-width: 0; border: 0; outline: 0; color: #222; background: transparent; font: 400 .74rem Outfit, sans-serif; }
+   .database-shop-newsletter input::placeholder { color: #777; }
+   .database-shop-newsletter button { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 50%; color: #5a5a5a; background: transparent; font: 500 1.1rem Outfit, sans-serif; cursor: pointer; }
+   .database-shop-newsletter button:hover { color: #b10f17; background: #f2eeee; }
+   .database-shop-newsletter button:disabled { cursor: wait; opacity: .55; }
+   .database-shop-newsletter-feedback { display: none; margin: -.45rem 0 .85rem; font: 400 .75rem Outfit, sans-serif; }
+   .database-shop-newsletter-feedback[data-state] { display: block; }
+   .database-shop-newsletter-feedback[data-state="error"] { color: #ef8e92; }
+   .database-shop-newsletter-feedback[data-state="success"] { color: #a9d8ad; }
+   .database-shop-layout { display: grid; grid-template-columns: minmax(150px, 175px) minmax(0, 1fr); gap: 1.4rem; align-items: start; }
+   .database-shop-sidebar { padding: 0 1rem .8rem 0; border-right: 1px solid #292929; }
+   .database-shop-sidebar h3 { margin: 0 0 .8rem; color: #f1eeee; font: 600 .95rem Outfit, sans-serif !important; }
+   .database-shop-categories { display: grid; gap: .12rem; }
+   .database-shop-author-filters { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid #292929; }
+   .database-shop-authors { display: grid; gap: .12rem; }
+   .database-shop-category-option { width: 100%; padding: .42rem 0; border: 0; color: #c6c0c0; background: transparent; font: 400 .8rem Outfit, sans-serif; text-align: left; cursor: pointer; }
+   .database-shop-category-option:hover, .database-shop-category-option[aria-pressed="true"] { color: #ff3038; }
+   .database-shop-content { min-width: 0; }
+   .database-shop-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(145px, 180px); gap: .65rem; margin: 0 0 .65rem; }
+   .database-shop-control { width: 100%; min-height: 36px; padding: .5rem .7rem; border: 1px solid #3a3a3a; border-radius: 22px; color: #eee9e8; background: #fff; font: 400 .76rem Outfit, sans-serif; }
+   .database-shop-control:not(input) { color: #eee; background: #222; }
+   .database-shop-control::placeholder { color: #938c8e; }
+   .database-shop-control:focus { outline: 1px solid #9a151b; border-color: #9a151b; }
+   .database-shop-results { margin: .55rem 0 .7rem; color: #aaa2a2; font: 400 .74rem Outfit, sans-serif; }
+   .database-shop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem 1rem; }
+   .database-shop-card { min-width: 0; }
+   .database-shop-cover { position: relative; width: min(100%, 190px); aspect-ratio: 2 / 3; margin: 0 auto .55rem; overflow: hidden; background: #161616; }
+   .database-shop-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform .45s; }
+   .database-shop-card:hover .database-shop-cover img { transform: scale(1.035); }
+   .database-shop-badge { position: absolute; top: .6rem; left: .6rem; padding: .35rem .55rem; color: #f3d889; background: #120f16e8; font: 600 .65rem Outfit, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+   .database-shop-category-label { margin: .1rem 0 .3rem; color: #e51d25; font: 500 .64rem Outfit, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+   .database-shop-title { display: -webkit-box; margin: 0; overflow: hidden; color: #f2eeee; font: 500 .78rem/1.35 Outfit, sans-serif !important; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+   .database-shop-author { display: none; }
+   .database-shop-description { display: none; }
+   .database-shop-price { margin: .45rem 0 0; color: #f0141d; font: 700 .88rem Outfit, sans-serif; }
+   .database-shop-buy { width: 100%; margin-top: .65rem; padding: .65rem .8rem; border: 1px solid #a9151c; color: #fff; background: #a9151c; font: 500 .7rem Outfit, sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+   .database-shop-buy:hover:not(:disabled) { background: #c21a22; }
+   .database-shop-buy:disabled { opacity: .55; cursor: not-allowed; }
+   .database-checkout-dialog { width: min(92vw, 520px); max-height: 90vh; padding: 0; border: 1px solid #4b3738; color: #f2eeee; background: #151214; }
+   .database-checkout-dialog::backdrop { background: rgba(0,0,0,.78); }
+   .database-checkout-content { padding: 1.5rem; }
+   .database-checkout-close { float: right; border: 0; color: #f2eeee; background: transparent; font-size: 1.6rem; cursor: pointer; }
+   .database-checkout-content h2 { margin: 0 2rem .4rem 0; font: 500 1.2rem Cinzel, Georgia, serif; }
+   .database-checkout-content p { color: #c7bfc0; font: 400 .84rem/1.55 Outfit, sans-serif; }
+   .database-cart-items { display: grid; gap: .75rem; max-height: 34vh; margin: 1rem 0; overflow-y: auto; }
+   .database-cart-item { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding-bottom: .75rem; border-bottom: 1px solid #393235; }
+   .database-cart-item img { width: 52px; height: 72px; object-fit: cover; }
+   .database-cart-item h3 { margin: 0 0 .25rem; color: #f3eded; font: 500 .85rem Outfit, sans-serif; }
+   .database-cart-item p { margin: 0; font-size: .75rem; }
+   .database-cart-item-controls { display: flex; align-items: center; gap: .45rem; margin-top: .45rem; }
+   .database-cart-item-controls button, .database-cart-remove { min-width: 30px; min-height: 30px; border: 1px solid #51484a; color: #f2eeee; background: #211d20; cursor: pointer; }
+   .database-cart-total { display: flex; justify-content: space-between; margin: 1rem 0; color: #f2eeee; font: 600 .95rem Outfit, sans-serif; }
+   .database-cart-checkout { width: 100%; padding: .75rem 1rem; border: 0; color: #fff; background: #a9151c; font: 500 .78rem Outfit, sans-serif; cursor: pointer; }
+   .database-cart-count { position: absolute; top: -.5rem; right: -.8rem; display: grid; width: 1rem; height: 1rem; place-items: center; border-radius: 50%; color: #fff; background: #a9151c; font: 600 .62rem Outfit, sans-serif; }
+   .database-checkout-form label, .database-pix-result label { display: block; margin: .9rem 0; color: #d4cdcd; font: 500 .78rem Outfit, sans-serif; }
+   .database-checkout-form input, .database-pix-result textarea { display: block; width: 100%; margin-top: .35rem; padding: .7rem; border: 1px solid #51484a; color: #fff; background: #211d20; font: 400 .9rem Outfit, sans-serif; }
+   .database-checkout-form button, .database-pix-copy { width: 100%; padding: .75rem 1rem; border: 0; color: #fff; background: #a9151c; font: 500 .78rem Outfit, sans-serif; cursor: pointer; }
+   .database-checkout-form button:disabled { opacity: .6; cursor: wait; }
+   .database-pix-qr { display: block; width: min(100%, 230px); margin: 1rem auto; background: #fff; }
+   .database-pix-result textarea { min-height: 75px; resize: vertical; }
+   .database-checkout-message { min-height: 1.3rem; color: #efb2b3 !important; }
+   .database-shop-empty { grid-column: 1 / -1; padding: 3rem 1rem; color: #aaa2a2; text-align: center; }
+   .database-shop-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 2rem; }
+   .database-shop-page-button { min-height: 40px; padding: .55rem 1rem; border: 1px solid rgba(255,255,255,.16); color: #f0eeee; background: transparent; font: 500 .8rem Outfit, sans-serif; cursor: pointer; }
+   .database-shop-page-button:hover:not(:disabled) { border-color: #a9151c; color: #efb2b3; }
+   .database-shop-page-button:disabled { opacity: .4; cursor: not-allowed; }
+   .bookstore-about-copy { max-width: 48rem; margin: 0 auto 3rem; color: #c7c1c1; font: 400 1rem/1.8 Outfit, sans-serif; text-align: center; }
+   .bookstore-about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+   .bookstore-about-card { padding: 1.75rem; border: 1px solid rgba(255,255,255,.12); background: rgba(22,20,22,.72); }
+   .bookstore-about-card h3 { margin: 0 0 .75rem; color: #eee9e8; font: 500 1.25rem/1.4 Cinzel, Georgia, serif; }
+   .bookstore-about-card p { margin: 0; color: #aaa2a2; font: 400 .92rem/1.7 Outfit, sans-serif; }
+   .bookstore-about-action { display: flex; justify-content: center; margin-top: 2.5rem; }
+   .bookstore-about-action a { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; padding: .75rem 1.25rem; border: 1px solid #a9151c; color: #f0eeee; font: 500 .75rem Outfit, sans-serif; letter-spacing: .12em; text-decoration: none; text-transform: uppercase; transition: background .2s, color .2s; }
+   .bookstore-about-action a:hover { color: #fff; background: #a9151c; }
+   .newsletter-feedback { min-height: 1.5rem; margin: 1rem auto 0; color: #d8caca; font: 400 .9rem/1.6 Outfit, sans-serif; }
+   .newsletter-feedback[data-state="error"] { color: #ef8e92; }
+   .newsletter-feedback[data-state="success"] { color: #a9d8ad; }
+   .newsletter-submit:disabled { cursor: wait; opacity: .65; }
+   #root > div > main { padding-top: 5.5rem !important; }
+   #root > div > main > section:first-child { padding-top: 0.35rem; }
+   header, header > div, header nav, #root > div > main, #root > div > main > section { border: 0 !important; box-shadow: none !important; }
+   body[data-site-page="home"] #root main > #catalogo-livros,
+   body[data-site-page="home"] #root main > #sobre,
+   body[data-site-page="home"] #root main > #novidades,
+   body[data-site-page="books"] #root main > section:not(#catalogo-livros),
+   body[data-site-page="about"] #root main > section:not(#sobre),
+   body[data-site-page="news"] #root main > section:not(#novidades) { display: none !important; }
+   @media (max-width: 700px) { .bookstore-about-grid { grid-template-columns: 1fr; } .bookstore-about-card { padding: 1.35rem; } }
+   @media (max-width: 420px) {
+    .account-shortcut { gap: 0.35rem; margin-left: 0.3rem; }
+    .account-shortcut-welcome { display: none; }
+    .account-shortcut-action { font-size: 0.7rem; }
+    .brand-logo-image { width: 29px; height: 29px; }
+   }
+   @media (max-width: 650px) { .database-shop-layout { grid-template-columns: 1fr; gap: 1rem; } .database-shop-sidebar { padding: 0 0 1rem; border-right: 0; border-bottom: 1px solid #292929; } .database-shop-categories { display: flex; gap: .4rem; overflow-x: auto; padding-bottom: .25rem; } .database-shop-category-option { width: auto; flex: 0 0 auto; padding: .45rem .75rem; border: 1px solid #363636; border-radius: 20px; } }
+   @media (max-width: 520px) { .database-shop-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem .85rem; } .database-shop-inner { width: min(100% - 2rem, 1080px); } .database-shop-toolbar { grid-template-columns: 1fr; } .database-shop-promo { align-items: flex-start; flex-direction: column; } .database-shop-newsletter { width: 100%; flex-basis: auto; } }
+  </style>
+  <script>
+   (() => {
+    let shortcut = document.querySelector('.account-shortcut');
+    let root = document.querySelector('#root');
+    if (!shortcut || !root) return;
+    let catalogBooks = null;
+    let catalogRequestStarted = false;
+    const catalogPageSize = 12;
+    let catalogPage = 1;
+    let catalogSearch = '';
+    let catalogCategory = '';
+    let catalogAuthor = '';
+    let catalogSort = 'newest';
+    let renderShopCart = () => {};
+
+    const setText = (element, text) => {
+     if (element && element.textContent !== text) element.textContent = text;
+    };
+
+    let checkedAccountToken = null;
+    let accountSessionActive = false;
+    const refreshAccountShortcut = async () => {
+     const accountShortcut = document.querySelector('.account-shortcut');
+     const welcome = accountShortcut?.querySelector('.account-shortcut-welcome');
+     const action = accountShortcut?.querySelector('.account-shortcut-action');
+     if (!accountShortcut || !welcome || !action) return;
+     if (!accountShortcut.dataset.sessionClickGuard) {
+      accountShortcut.dataset.sessionClickGuard = 'true';
+      accountShortcut.addEventListener('click', (event) => {
+       if (accountSessionActive) event.preventDefault();
+      });
+     }
+
+     const token = localStorage.getItem('nocturnal_user_token');
+     if (!token) {
+      checkedAccountToken = null;
+      accountSessionActive = false;
+      accountShortcut.href = '/login';
+      accountShortcut.setAttribute('aria-label', 'Entrar ou criar uma conta');
+      setText(welcome, 'Bem-vindo(a)');
+      setText(action, 'Entrar ou Cadastrar');
+      return;
+     }
+     if (token === checkedAccountToken) return;
+     checkedAccountToken = token;
+
+     try {
+      const response = await fetch('/api/auth/user/me', {
+       headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) {
+       if (response.status === 401 && localStorage.getItem('nocturnal_user_token') === token) {
+        localStorage.removeItem('nocturnal_user_token');
+        checkedAccountToken = null;
+        accountSessionActive = false;
+        accountShortcut.href = '/login';
+        accountShortcut.setAttribute('aria-label', 'Entrar ou criar uma conta');
+        setText(welcome, 'Bem-vindo(a)');
+        setText(action, 'Entrar ou Cadastrar');
+       }
+       return;
+      }
+
+      const data = await response.json();
+      const name = String(data.user?.name || '').trim();
+      if (!name || localStorage.getItem('nocturnal_user_token') !== token) return;
+      accountSessionActive = true;
+      accountShortcut.href = '/login';
+      accountShortcut.setAttribute('aria-label', `Conta de ${name}`);
+      setText(welcome, 'Olá,');
+      setText(action, name);
+     } catch (error) {
+      console.error('Não foi possível carregar o nome da conta:', error);
+     }
+    };
+
+    window.addEventListener('storage', (event) => {
+     if (event.key === 'nocturnal_user_token') {
+      checkedAccountToken = null;
+      refreshAccountShortcut();
+     }
+    });
+    window.addEventListener('pageshow', () => {
+     checkedAccountToken = null;
+     refreshAccountShortcut();
+    });
+
+    const syncPageRoute = () => {
+     const routes = {
+      'catalogo-livros': 'books',
+      'sobre': 'about',
+      'novidades': 'news'
+     };
+     const page = routes[window.location.hash.slice(1)] || 'home';
+     document.body.dataset.sitePage = page;
+     document.title = {
+      home: 'Nocturnal Chronicles — Dark Romance',
+      books: 'Livros — Nocturnal Chronicles',
+      about: 'Sobre nós — Nocturnal Chronicles',
+      news: 'Novidades — Nocturnal Chronicles'
+     }[page];
+    };
+
+    const setupNewsletterForm = (form, input, button, feedback) => {
+     if (form.dataset.newsletterReady === 'true') return;
+     form.dataset.newsletterReady = 'true';
+     form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!input.reportValidity()) return;
+
+      button.disabled = true;
+      feedback.dataset.state = '';
+      feedback.textContent = 'Salvando sua inscrição...';
+      try {
+       const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: input.value.trim() })
+       });
+       const result = await response.json();
+       if (!response.ok) throw new Error(result.error || 'Não foi possível salvar sua inscrição.');
+       feedback.dataset.state = 'success';
+       feedback.textContent = result.message || 'Inscrição confirmada! Você receberá nossas novidades.';
+       form.reset();
+      } catch (error) {
+       feedback.dataset.state = 'error';
+       feedback.textContent = error.message || 'Não foi possível salvar sua inscrição. Tente novamente.';
+      } finally {
+       button.disabled = false;
+      }
+     }, { capture: true });
+    };
+
+    const updateFeaturedBook = (book) => {
+     const section = root.querySelector('#destaque');
+     if (!section || !book) return;
+     const title = section.querySelector('h3');
+     const featuredHeading = section.querySelector('h2');
+     const featuredEyebrow = section.querySelector('h2')?.previousElementSibling;
+     const titleParent = title && title.parentElement;
+     const image = section.querySelector('img');
+     const author = titleParent && titleParent.querySelector('p.text-muted-foreground');
+     const description = titleParent && titleParent.querySelector('p.text-lg');
+     const price = titleParent && titleParent.querySelector('.font-display.text-4xl');
+     if (!title || !image || !titleParent) return;
+
+     setText(featuredEyebrow, 'Livro em destaque');
+     setText(featuredHeading, 'Conheça o livro em destaque.');
+     setText(title, book.title || 'Livro');
+     const coverSource = book.cover_image || '/logo.png';
+     image.removeAttribute('srcset');
+     image.src = coverSource;
+     image.alt = book.title || 'Capa do livro';
+     const imageWrapper = image.closest('[data-base44-image]');
+     if (imageWrapper) {
+      imageWrapper.replaceWith(image);
+     }
+     if (author) setText(author, `por ${book.author || 'Autor(a) não informado(a)'}`);
+     if (description) setText(description, book.description || 'Conheça este livro publicado na coleção Nocturnal Chronicles.');
+     if (price) setText(price, new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(book.price) || 0));
+
+     const edition = titleParent.querySelector('.flex.items-center.gap-3');
+     if (edition) edition.style.setProperty('display', 'none', 'important');
+     const tags = titleParent.querySelector('.flex.flex-wrap');
+     if (tags) tags.style.setProperty('display', 'none', 'important');
+     const quote = titleParent.querySelector('blockquote');
+     if (quote) quote.style.setProperty('display', 'none', 'important');
+     const triggerWarnings = [...titleParent.querySelectorAll('button')].find((button) => button.textContent.includes('Avisos de Gatilho'));
+     if (triggerWarnings) triggerWarnings.parentElement.style.setProperty('display', 'none', 'important');
+
+     const oldAction = [...titleParent.querySelectorAll('button')].find((button) => button.textContent.includes('Reclamar Sua Cópia'));
+     if (oldAction && !oldAction.dataset.catalogAction) {
+      const action = document.createElement('a');
+      action.className = oldAction.className;
+      action.href = '#catalogo-livros';
+      action.textContent = 'Ver no catálogo';
+      action.dataset.catalogAction = 'true';
+      oldAction.replaceWith(action);
+     }
+     section.dataset.databaseFeaturedBook = String(book.id);
+    };
+
+    const renderPublishedBookShop = (books) => {
+     const gallery = root.querySelector('#galeria');
+     if (!gallery) return false;
+
+     let shop = root.querySelector('.database-shop');
+     if (!shop) {
+      shop = document.createElement('section');
+      shop.id = 'catalogo-livros';
+      shop.setAttribute('aria-label', 'Catálogo de livros');
+      shop.className = 'database-shop';
+      shop.innerHTML = `
+       <div class="database-shop-inner">
+        <div class="database-shop-layout">
+         <aside class="database-shop-sidebar" aria-label="Filtros do catálogo">
+          <h3>Categorias</h3>
+          <div class="database-shop-categories" role="group" aria-label="Filtrar por categoria"></div>
+          <div class="database-shop-author-filters">
+           <h3>Filtrar por autor</h3>
+           <div class="database-shop-authors" role="group" aria-label="Filtrar por autor"></div>
+          </div>
+         </aside>
+         <div class="database-shop-content">
+          <header class="database-shop-header">
+           <p class="database-shop-eyebrow">Catálogo da livraria</p>
+           <h2 class="database-shop-heading">Livros para sua próxima leitura</h2>
+           <p class="database-shop-intro">Encontre histórias que combinam com você.</p>
+          </header>
+          <div class="database-shop-promo">
+           <div><strong>Receba as novidades da livraria</strong><span>Cadastre seu e-mail para acompanhar os próximos livros.</span></div>
+           <form class="database-shop-newsletter" novalidate>
+            <input type="email" required maxlength="255" placeholder="Digite seu e-mail" aria-label="E-mail para receber novidades">
+            <button type="submit" aria-label="Cadastrar e-mail">›</button>
+           </form>
+          </div>
+          <p class="database-shop-newsletter-feedback" aria-live="polite"></p>
+          <div class="database-shop-toolbar">
+           <input class="database-shop-control database-shop-search" type="search" aria-label="Buscar livros" placeholder="Digite o título ou autor">
+           <select class="database-shop-control database-shop-sort" aria-label="Ordenar livros">
+            <option value="newest">Mais recentes</option>
+            <option value="title">Título: A a Z</option>
+            <option value="price-asc">Menor preço</option>
+            <option value="price-desc">Maior preço</option>
+           </select>
+          </div>
+          <p class="database-shop-results" aria-live="polite"></p>
+          <div class="database-shop-grid"></div>
+          <nav class="database-shop-pagination" aria-label="Páginas do catálogo">
+           <button class="database-shop-page-button" type="button" data-page-direction="-1">← Anterior</button>
+           <span class="database-shop-page-label"></span>
+           <button class="database-shop-page-button" type="button" data-page-direction="1">Próxima →</button>
+          </nav>
+         </div>
+        </div>
+        <dialog class="database-checkout-dialog" aria-labelledby="database-checkout-title">
+         <div class="database-checkout-content">
+          <button class="database-checkout-close" type="button" aria-label="Fechar">×</button>
+          <h2 id="database-checkout-title">Seu carrinho</h2>
+          <div class="database-cart-view">
+           <div class="database-cart-items"></div>
+           <div class="database-cart-total"><span>Total</span><span class="database-cart-total-value"></span></div>
+           <button class="database-cart-checkout" type="button">Finalizar compra</button>
+          </div>
+          <form class="database-checkout-form" hidden>
+           <label>Seu nome<input name="customer_name" autocomplete="name" required maxlength="255"></label>
+           <label>Seu e-mail<input name="customer_email" type="email" autocomplete="email" required maxlength="255"></label>
+           <button type="submit">Gerar Pix</button>
+          </form>
+          <div class="database-pix-result" hidden>
+           <p class="database-pix-instructions"></p>
+           <p class="database-pix-dev-warning" hidden></p>
+           <img class="database-pix-qr" alt="QR Code Pix" hidden>
+           <label>Pix copia e cola<textarea readonly></textarea></label>
+           <button class="database-pix-copy" type="button">Copiar código Pix</button>
+          </div>
+          <p class="database-checkout-message" role="status" aria-live="polite"></p>
+         </div>
+        </dialog>
+       </div>`;
+      gallery.after(shop);
+
+      const checkoutDialog = shop.querySelector('.database-checkout-dialog');
+      const cartStorageKey = 'nocturnal_book_cart';
+      let cartItems = [];
+      try {
+       const storedCart = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
+       if (Array.isArray(storedCart)) {
+        cartItems = storedCart.filter((item) => item && Number.isInteger(Number(item.book_id)) && Number.isInteger(Number(item.quantity)) && Number(item.quantity) > 0)
+         .map((item) => ({ book_id: Number(item.book_id), quantity: Math.min(20, Number(item.quantity)) }));
+       }
+      } catch (error) {
+       console.error('Não foi possível restaurar o carrinho:', error);
+      }
+      const cartView = shop.querySelector('.database-cart-view');
+      const checkoutForm = shop.querySelector('.database-checkout-form');
+      const pixResult = shop.querySelector('.database-pix-result');
+      const checkoutMessage = shop.querySelector('.database-checkout-message');
+      const persistCart = () => {
+       localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+      };
+      const renderCart = () => {
+       const cartItemsElement = shop.querySelector('.database-cart-items');
+       const booksById = new Map((catalogBooks || []).map((book) => [Number(book.id), book]));
+       cartItems = cartItems.filter((item) => booksById.has(Number(item.book_id)) && booksById.get(Number(item.book_id)).ebook_available);
+       persistCart();
+       cartItemsElement.replaceChildren();
+       let total = 0;
+       for (const item of cartItems) {
+        const book = booksById.get(Number(item.book_id));
+        const quantity = Number(item.quantity);
+        total += Number(book.price) * quantity;
+        const row = document.createElement('article');
+        row.className = 'database-cart-item';
+        const image = document.createElement('img');
+        image.src = book.cover_image || '/logo.png';
+        image.alt = '';
+        const details = document.createElement('div');
+        const title = document.createElement('h3');
+        title.textContent = book.title;
+        const price = document.createElement('p');
+        price.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(book.price));
+        const controls = document.createElement('div');
+        controls.className = 'database-cart-item-controls';
+        for (const [label, change] of [['−', -1], ['+', 1]]) {
+         const control = document.createElement('button');
+         control.type = 'button';
+         control.textContent = label;
+         control.setAttribute('aria-label', `${change < 0 ? 'Diminuir' : 'Aumentar'} quantidade de ${book.title}`);
+         control.disabled = change > 0 && quantity >= 20;
+         control.addEventListener('click', () => {
+          item.quantity += change;
+          if (item.quantity <= 0) cartItems = cartItems.filter((entry) => entry !== item);
+          resetCheckout();
+          renderCart();
+         });
+         controls.append(control);
+        }
+        const count = document.createElement('span');
+        count.textContent = String(quantity);
+        controls.insertBefore(count, controls.lastChild);
+        details.append(title, price, controls);
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'database-cart-remove';
+        remove.textContent = '×';
+        remove.setAttribute('aria-label', `Remover ${book.title} do carrinho`);
+        remove.addEventListener('click', () => {
+         cartItems = cartItems.filter((entry) => entry !== item);
+         resetCheckout();
+         renderCart();
+        });
+        row.append(image, details, remove);
+        cartItemsElement.append(row);
+       }
+       shop.querySelector('.database-cart-total-value').textContent =
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+       shop.querySelector('.database-cart-checkout').disabled = cartItems.length === 0;
+       const cartButton = Array.from(root.querySelectorAll('header button'))
+        .find((button) => button.textContent.includes('Carrinho'));
+       if (cartButton) {
+        let count = cartButton.querySelector('.database-cart-count');
+        if (!count) {
+         count = document.createElement('span');
+         count.className = 'database-cart-count';
+         cartButton.append(count);
+        }
+        const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+        count.textContent = String(itemCount);
+        count.hidden = itemCount === 0;
+        cartButton.setAttribute('aria-label', itemCount ? `Carrinho, ${itemCount} itens` : 'Carrinho');
+       }
+      };
+      const resetCheckout = () => {
+       checkoutForm.hidden = true;
+       pixResult.hidden = true;
+       cartView.hidden = false;
+       checkoutMessage.textContent = '';
+      };
+      const continueToCheckoutAfterLogin = () => {
+       const token = localStorage.getItem('nocturnal_user_token');
+       if (!token) {
+        const returnUrl = encodeURIComponent('/?checkout=1#catalogo-livros');
+        location.href = `/login?next=${returnUrl}`;
+        return false;
+       }
+       return true;
+      };
+      renderShopCart = renderCart;
+      shop.querySelector('.database-checkout-close').addEventListener('click', () => checkoutDialog.close());
+      shop.querySelector('.database-shop-grid').addEventListener('click', (event) => {
+       const button = event.target.closest('[data-buy-book]');
+       if (!button || button.disabled) return;
+       const book = catalogBooks?.find((item) => Number(item.id) === Number(button.dataset.buyBook));
+       if (!book) return;
+       const inCart = cartItems.find((item) => Number(item.book_id) === Number(book.id));
+       if (inCart) inCart.quantity = Math.min(20, inCart.quantity + 1);
+       else cartItems.push({ book_id: Number(book.id), quantity: 1 });
+       renderCart();
+       resetCheckout();
+       if (!continueToCheckoutAfterLogin()) return;
+       checkoutDialog.showModal();
+      });
+      shop.querySelector('.database-cart-checkout').addEventListener('click', () => {
+       if (!continueToCheckoutAfterLogin()) return;
+       checkoutForm.reset();
+       cartView.hidden = true;
+       checkoutForm.hidden = false;
+       checkoutForm.elements.customer_name.focus();
+      });
+      checkoutForm.addEventListener('submit', async (event) => {
+       event.preventDefault();
+       const form = event.currentTarget;
+       const button = form.querySelector('button[type="submit"]');
+       const message = checkoutMessage;
+       button.disabled = true;
+       message.textContent = 'Gerando sua cobrança Pix...';
+       try {
+        const token = localStorage.getItem('nocturnal_user_token');
+        if (!token) {
+         continueToCheckoutAfterLogin();
+         return;
+        }
+        const response = await fetch('/api/orders', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+         body: JSON.stringify({
+          customer_name: form.elements.customer_name.value.trim(),
+          customer_email: form.elements.customer_email.value.trim(),
+          items: cartItems.map((item) => ({ book_id: item.book_id, quantity: item.quantity }))
+         })
+        });
+        const result = await response.json();
+        if (response.status === 401) {
+         localStorage.removeItem('nocturnal_user_token');
+         continueToCheckoutAfterLogin();
+         return;
+        }
+        if (!response.ok) throw new Error(result.error || 'Não foi possível iniciar o pagamento.');
+        if (!result.payment?.brCode) throw new Error('A cobrança Pix foi criada sem um código para pagamento.');
+        const qr = shop.querySelector('.database-pix-qr');
+        qr.hidden = !result.payment.brCodeBase64;
+        if (result.payment.brCodeBase64) qr.src = result.payment.brCodeBase64;
+        const devWarning = shop.querySelector('.database-pix-dev-warning');
+        devWarning.hidden = !result.payment.devMode;
+        devWarning.textContent = result.payment.devMode
+         ? 'Pix de teste (Dev Mode): não pague este QR Code pelo app do banco. Para testar, simule o pagamento pela API de desenvolvimento da AbacatePay. Para aceitar Pix real, configure uma chave de produção.'
+         : '';
+        shop.querySelector('.database-pix-instructions').textContent = result.payment.devMode
+         ? 'Cobrança de teste criada. Esta cobrança não movimenta dinheiro.'
+         : 'Pague pelo app do seu banco. Após a confirmação, enviaremos os livros em PDF para seu e-mail.';
+        shop.querySelector('.database-pix-result textarea').value = result.payment.brCode;
+        cartItems = [];
+        persistCart();
+        form.hidden = true;
+        pixResult.hidden = false;
+        message.textContent = `Pedido ${result.order_ids?.map((id) => `#${id}`).join(', ') || `#${result.order_id}`} criado.`;
+        const copyButton = shop.querySelector('.database-pix-copy');
+        copyButton.onclick = async () => {
+         try {
+          await navigator.clipboard.writeText(shop.querySelector('.database-pix-result textarea').value);
+          checkoutMessage.textContent = 'Código Pix copiado.';
+         } catch (error) {
+          checkoutMessage.textContent = 'Não foi possível copiar. Selecione e copie o código Pix.';
+         }
+        };
+       } catch (error) {
+        message.textContent = error.message;
+       } finally {
+        button.disabled = false;
+       }
+      });
+
+      shop.querySelector('.database-shop-search').addEventListener('input', (event) => {
+       catalogSearch = event.currentTarget.value.trim().toLocaleLowerCase('pt-BR');
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      shop.querySelector('.database-shop-categories').addEventListener('click', (event) => {
+       const option = event.target.closest('[data-category]');
+       if (!option) return;
+       catalogCategory = option.dataset.category;
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      shop.querySelector('.database-shop-authors').addEventListener('click', (event) => {
+       const option = event.target.closest('[data-author]');
+       if (!option) return;
+       catalogAuthor = option.dataset.author;
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      shop.querySelector('.database-shop-sort').addEventListener('change', (event) => {
+       catalogSort = event.currentTarget.value;
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      const newsletterForm = shop.querySelector('.database-shop-newsletter');
+      setupNewsletterForm(
+       newsletterForm,
+       newsletterForm.querySelector('input[type="email"]'),
+       newsletterForm.querySelector('button[type="submit"]'),
+       shop.querySelector('.database-shop-newsletter-feedback')
+      );
+      shop.querySelectorAll('[data-page-direction]').forEach((button) => {
+       button.addEventListener('click', () => {
+        catalogPage += Number(button.dataset.pageDirection);
+        showDatabaseCatalog(catalogBooks || []);
+       });
+      });
+     }
+
+     shop.hidden = false;
+     const intro = shop.querySelector('.database-shop-intro');
+     intro.textContent = books.length
+      ? `${books.length} ${books.length === 1 ? 'livro disponível' : 'livros disponíveis'} para você descobrir.`
+      : 'Estamos preparando novas histórias para você.';
+     const categories = [...new Set(books.map((book) => String(book.category || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+     const authors = [...new Set(books.map((book) => String(book.author || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+     const selectedCategory = categories.includes(catalogCategory) ? catalogCategory : '';
+     if (selectedCategory !== catalogCategory) catalogCategory = selectedCategory;
+     const selectedAuthor = authors.includes(catalogAuthor) ? catalogAuthor : '';
+     if (selectedAuthor !== catalogAuthor) catalogAuthor = selectedAuthor;
+     const heading = shop.querySelector('.database-shop-heading');
+     heading.textContent = (catalogCategory || (categories.length === 1 ? categories[0] : 'Livros para sua próxima leitura'))
+      .toLocaleUpperCase('pt-BR');
+     const categoryList = shop.querySelector('.database-shop-categories');
+     const categoryOptions = [['', 'Todas as categorias'], ...categories.map((category) => [category, category])];
+     categoryList.replaceChildren(...categoryOptions.map(([value, label]) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'database-shop-category-option';
+      option.dataset.category = value;
+      option.setAttribute('aria-pressed', String(value === catalogCategory));
+      option.textContent = label;
+      return option;
+     }));
+     const authorList = shop.querySelector('.database-shop-authors');
+     authorList.replaceChildren(...authors.map((author) => {
+      const option = document.createElement('button');
+      option.type = 'button';
+      option.className = 'database-shop-category-option';
+      option.dataset.author = author;
+      option.setAttribute('aria-pressed', String(author === catalogAuthor));
+      option.textContent = `${author} (${books.filter((book) => String(book.author || '').trim() === author).length})`;
+      return option;
+     }));
+     shop.querySelector('.database-shop-author-filters').hidden = authors.length === 0;
+     shop.querySelector('.database-shop-search').value = catalogSearch;
+     shop.querySelector('.database-shop-sort').value = catalogSort;
+
+     let filteredBooks = books.filter((book) => {
+      const matchesCategory = !catalogCategory || String(book.category || '').trim() === catalogCategory;
+      const matchesAuthor = !catalogAuthor || String(book.author || '').trim() === catalogAuthor;
+      const searchable = `${book.title || ''} ${book.author || ''} ${book.category || ''}`.toLocaleLowerCase('pt-BR');
+      return matchesCategory && matchesAuthor && (!catalogSearch || searchable.includes(catalogSearch));
+     });
+     if (catalogSort === 'title') filteredBooks.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'pt-BR'));
+     if (catalogSort === 'price-asc') filteredBooks.sort((a, b) => Number(a.price) - Number(b.price));
+     if (catalogSort === 'price-desc') filteredBooks.sort((a, b) => Number(b.price) - Number(a.price));
+     if (catalogSort === 'newest') filteredBooks.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+     const pageCount = Math.max(1, Math.ceil(filteredBooks.length / catalogPageSize));
+     catalogPage = Math.max(1, Math.min(catalogPage, pageCount));
+     const startIndex = (catalogPage - 1) * catalogPageSize;
+     const pageBooks = filteredBooks.slice(startIndex, startIndex + catalogPageSize);
+     const grid = shop.querySelector('.database-shop-grid');
+     grid.replaceChildren();
+
+     if (!pageBooks.length) {
+      const empty = document.createElement('p');
+      empty.className = 'database-shop-empty';
+      empty.textContent = books.length
+       ? 'Nenhum livro encontrado. Tente mudar a busca ou a categoria.'
+       : 'Ainda não há livros publicados. Volte em breve para conhecer as novidades.';
+      grid.append(empty);
+     } else {
+      pageBooks.forEach((book) => {
+       const card = document.createElement('article');
+       card.className = 'database-shop-card';
+
+       const cover = document.createElement('div');
+       cover.className = 'database-shop-cover';
+       const image = document.createElement('img');
+       image.src = book.cover_image || '/logo.png';
+       image.alt = `Capa de ${book.title || 'livro'}`;
+       image.loading = 'lazy';
+       image.addEventListener('error', () => {
+        if (image.src !== new URL('/logo.png', location.href).href) image.src = '/logo.png';
+       }, { once: true });
+       cover.append(image);
+       if (book.is_featured) {
+        const badge = document.createElement('span');
+        badge.className = 'database-shop-badge';
+        badge.textContent = 'Destaque';
+        cover.append(badge);
+       }
+
+       const category = document.createElement('p');
+       category.className = 'database-shop-category-label';
+       category.textContent = book.category || 'Nocturnal Chronicles';
+       const title = document.createElement('h3');
+       title.className = 'database-shop-title';
+       title.textContent = book.title || 'Livro sem título';
+       const author = document.createElement('p');
+       author.className = 'database-shop-author';
+       author.textContent = `por ${book.author || 'Autor(a) não informado(a)'}`;
+       const description = document.createElement('p');
+       description.className = 'database-shop-description';
+       description.textContent = book.description || 'Conheça este livro da coleção Nocturnal Chronicles.';
+       const price = document.createElement('p');
+       price.className = 'database-shop-price';
+       price.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(book.price) || 0);
+
+       const buyButton = document.createElement('button');
+       buyButton.type = 'button';
+       buyButton.className = 'database-shop-buy';
+       buyButton.dataset.buyBook = String(book.id);
+       buyButton.disabled = !book.ebook_available;
+       buyButton.textContent = book.ebook_available ? 'Comprar' : 'PDF em breve';
+
+       card.append(cover, category, title, author, description, price, buyButton);
+       grid.append(card);
+      });
+     }
+
+     shop.querySelector('.database-shop-results').textContent = filteredBooks.length
+      ? `Exibindo ${startIndex + 1}–${Math.min(startIndex + pageBooks.length, filteredBooks.length)} de ${filteredBooks.length} livros`
+      : 'Nenhum livro corresponde aos filtros.';
+     const pagination = shop.querySelector('.database-shop-pagination');
+     pagination.hidden = filteredBooks.length === 0;
+     pagination.querySelector('[data-page-direction="-1"]').disabled = catalogPage <= 1;
+     pagination.querySelector('.database-shop-page-label').textContent = `Página ${catalogPage} de ${pageCount}`;
+     pagination.querySelector('[data-page-direction="1"]').disabled = catalogPage >= pageCount;
+     renderShopCart();
+     if (new URLSearchParams(location.search).get('checkout') === '1' && !shop.dataset.resumedCheckout) {
+      shop.dataset.resumedCheckout = 'true';
+      history.replaceState(null, '', `${location.pathname}#catalogo-livros`);
+      if (cartItems.length) {
+       checkoutDialog.showModal();
+       cartView.hidden = true;
+       checkoutForm.hidden = false;
+       checkoutForm.elements.customer_name.focus();
+      }
+     }
+     return true;
+    };
+
+    const showDatabaseCatalog = (books) => {
+     const section = root.querySelector('#galeria');
+     const container = section && section.querySelector(':scope > div');
+     const grid = container && container.querySelector('.grid');
+     if (!section || !container || !grid) return false;
+     return renderPublishedBookShop(books);
+
+     let toolbar = container.querySelector('.catalog-toolbar');
+     if (!toolbar) {
+      toolbar = document.createElement('div');
+      toolbar.className = 'catalog-toolbar';
+
+      const search = document.createElement('input');
+      search.type = 'search';
+      search.className = 'catalog-control catalog-search';
+      search.placeholder = 'Buscar por título ou autor';
+      search.setAttribute('aria-label', 'Buscar livros por título ou autor');
+      search.addEventListener('input', () => {
+       catalogSearch = search.value.trim().toLocaleLowerCase('pt-BR');
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+
+      const category = document.createElement('select');
+      category.className = 'catalog-control catalog-category';
+      category.setAttribute('aria-label', 'Filtrar livros por categoria');
+      category.addEventListener('change', () => {
+       catalogCategory = category.value;
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+
+      const sort = document.createElement('select');
+      sort.className = 'catalog-control catalog-sort';
+      sort.setAttribute('aria-label', 'Ordenar livros');
+      [
+       ['newest', 'Mais recentes'],
+       ['title', 'Título: A a Z'],
+       ['price-asc', 'Menor preço'],
+       ['price-desc', 'Maior preço']
+      ].forEach(([value, label]) => {
+       const option = document.createElement('option');
+       option.value = value;
+       option.textContent = label;
+       sort.append(option);
+      });
+      sort.addEventListener('change', () => {
+       catalogSort = sort.value;
+       catalogPage = 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+
+      toolbar.append(search, category, sort);
+      grid.before(toolbar);
+     }
+
+     const categories = [...new Set(books.map((book) => String(book.category || '').trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+     const categorySelect = toolbar.querySelector('.catalog-category');
+     const selectedCategory = categories.includes(catalogCategory) ? catalogCategory : '';
+     if (selectedCategory !== catalogCategory) catalogCategory = selectedCategory;
+     categorySelect.replaceChildren();
+     const allCategories = document.createElement('option');
+     allCategories.value = '';
+     allCategories.textContent = 'Todas as categorias';
+     categorySelect.append(allCategories);
+     categories.forEach((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      categorySelect.append(option);
+     });
+     categorySelect.value = catalogCategory;
+     toolbar.querySelector('.catalog-search').value = catalogSearch;
+     toolbar.querySelector('.catalog-sort').value = catalogSort;
+
+     if (!books.length) {
+      section.hidden = true;
+      const featuredSection = root.querySelector('#destaque');
+      if (featuredSection) featuredSection.hidden = true;
+      grid.replaceChildren();
+      delete grid.dataset.databaseBooksRendered;
+      return true;
+     }
+
+     section.hidden = false;
+     const featuredSection = root.querySelector('#destaque');
+     if (featuredSection) featuredSection.hidden = false;
+     const query = catalogSearch;
+     let filteredBooks = books.filter((book) => {
+      const matchesCategory = !catalogCategory || String(book.category || '').trim() === catalogCategory;
+      const searchableText = `${book.title || ''} ${book.author || ''} ${book.category || ''}`.toLocaleLowerCase('pt-BR');
+      return matchesCategory && (!query || searchableText.includes(query));
+     });
+     if (catalogSort === 'title') filteredBooks.sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'pt-BR'));
+     if (catalogSort === 'price-asc') filteredBooks.sort((a, b) => Number(a.price) - Number(b.price));
+     if (catalogSort === 'price-desc') filteredBooks.sort((a, b) => Number(b.price) - Number(a.price));
+     if (catalogSort === 'newest') filteredBooks.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+
+     const pageCount = Math.max(1, Math.ceil(filteredBooks.length / catalogPageSize));
+     catalogPage = Math.min(catalogPage, pageCount);
+     const startIndex = (catalogPage - 1) * catalogPageSize;
+     const visibleBooks = filteredBooks.slice(startIndex, startIndex + catalogPageSize);
+     const signature = `${catalogPage}:${catalogSearch}:${catalogCategory}:${catalogSort}:` +
+      visibleBooks.map((book) => `${book.id}:${book.updated_at || book.created_at || ''}`).join('|');
+     if (grid.dataset.databaseBooksRendered === signature) return true;
+
+     const cards = visibleBooks.map((book) => {
+      const article = document.createElement('article');
+      article.className = 'group flex flex-col border border-white/10 bg-white/[0.02] p-4 transition-colors duration-300 hover:border-red-900/70 hover:bg-white/[0.035]';
+      article.dataset.databaseBook = String(book.id);
+
+      const cover = document.createElement('div');
+      cover.className = 'relative aspect-[2/3] overflow-hidden bg-card mb-5';
+      const image = document.createElement('img');
+      image.className = 'w-full h-full inset-0 absolute object-cover transition-transform duration-700 group-hover:scale-105';
+      image.src = book.cover_image || '/logo.png';
+      image.alt = `Capa de ${book.title || 'livro'}`;
+      image.loading = 'lazy';
+      image.addEventListener('error', () => {
+       if (image.src !== new URL('/logo.png', location.href).href) image.src = '/logo.png';
+      }, { once: true });
+      cover.append(image);
+
+      const details = document.createElement('div');
+      details.className = 'flex flex-col flex-1';
+      const category = document.createElement('p');
+      category.className = 'text-[10px] tracking-caps uppercase text-accent mb-3';
+      category.textContent = book.category || 'Nocturnal Chronicles';
+      const badges = document.createElement('div');
+      badges.className = 'absolute top-3 left-3 flex flex-wrap gap-2';
+      if (book.is_featured) {
+       const badge = document.createElement('span');
+       badge.className = 'catalog-featured-label bg-black/80 px-2 py-1 uppercase tracking-wider';
+       badge.textContent = 'Destaque';
+       badges.append(badge);
+      }
+      if (badges.childElementCount) cover.append(badges);
+      const title = document.createElement('h3');
+      title.className = 'font-display text-2xl leading-tight mb-1';
+      title.textContent = book.title || 'Livro sem título';
+      const author = document.createElement('p');
+      author.className = 'text-muted-foreground mb-4';
+      author.textContent = `por ${book.author || 'Autor(a) não informado(a)'}`;
+      const description = document.createElement('p');
+      description.className = 'catalog-book-description text-muted-foreground leading-relaxed mb-6';
+      description.textContent = book.description || 'Conheça este livro publicado na coleção Nocturnal Chronicles.';
+      const footer = document.createElement('div');
+      footer.className = 'mt-auto flex items-center justify-between gap-3 border-t border-border pt-4';
+      const price = document.createElement('span');
+      price.className = 'font-display text-2xl';
+      price.textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(book.price) || 0);
+      const action = document.createElement('button');
+      action.type = 'button';
+      action.className = 'inline-flex items-center justify-center px-4 py-3 bg-accent text-primary-foreground text-[11px] tracking-caps uppercase transition-colors hover:bg-accent/90';
+      action.textContent = 'Ver detalhes';
+      action.addEventListener('click', () => {
+       updateFeaturedBook(book);
+       location.hash = '#destaque';
+      });
+
+      footer.append(price, action);
+      details.append(category, title, author, description, footer);
+      article.append(cover, details);
+      return article;
+     });
+
+     grid.replaceChildren(...cards);
+     grid.dataset.databaseBooksRendered = signature;
+
+     const sectionHeading = section.querySelector('h2');
+     if (sectionHeading) sectionHeading.textContent = 'Livros publicados';
+     const sectionSubtitle = container.querySelector(':scope > div:first-child > p');
+     if (sectionSubtitle) sectionSubtitle.textContent = `${books.length} ${books.length === 1 ? 'livro disponível' : 'livros disponíveis'} na coleção.`;
+
+     let results = container.querySelector('.catalog-results');
+     if (!results) {
+      results = document.createElement('div');
+      results.className = 'catalog-results';
+      results.setAttribute('aria-live', 'polite');
+      toolbar.after(results);
+     }
+     results.textContent = filteredBooks.length
+      ? `Exibindo ${startIndex + 1}–${Math.min(startIndex + visibleBooks.length, filteredBooks.length)} de ${filteredBooks.length} livros`
+      : 'Nenhum livro corresponde à busca.';
+     if (!filteredBooks.length) {
+      const empty = document.createElement('div');
+      empty.className = 'catalog-empty';
+      empty.textContent = 'Não encontramos livros com esses filtros. Tente outra busca ou categoria.';
+      grid.replaceChildren(empty);
+     }
+
+     let pagination = container.querySelector('.catalog-pagination');
+     if (!pagination) {
+      pagination = document.createElement('nav');
+      pagination.className = 'catalog-pagination';
+      pagination.setAttribute('aria-label', 'Paginação do catálogo');
+      const previous = document.createElement('button');
+      previous.type = 'button';
+      previous.className = 'catalog-page-button';
+      previous.textContent = '← Anterior';
+      previous.addEventListener('click', () => {
+       catalogPage = Math.max(1, catalogPage - 1);
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      const pageLabel = document.createElement('span');
+      pageLabel.className = 'catalog-page-label text-muted-foreground text-sm';
+      const next = document.createElement('button');
+      next.type = 'button';
+      next.className = 'catalog-page-button';
+      next.textContent = 'Próxima →';
+      next.addEventListener('click', () => {
+       catalogPage += 1;
+       showDatabaseCatalog(catalogBooks || []);
+      });
+      pagination.append(previous, pageLabel, next);
+      grid.after(pagination);
+     }
+     pagination.hidden = filteredBooks.length === 0;
+     pagination.children[0].disabled = catalogPage <= 1;
+     pagination.children[1].textContent = `Página ${catalogPage} de ${pageCount}`;
+     pagination.children[2].disabled = catalogPage >= pageCount;
+
+     const featured = books.find((book) => book.is_featured) || books[0];
+     updateFeaturedBook(featured);
+     return true;
+    };
+
+    const loadCatalog = async () => {
+     if (catalogRequestStarted) return;
+     catalogRequestStarted = true;
+     try {
+      const response = await fetch('/api/books');
+      if (!response.ok) throw new Error(`Não foi possível carregar os livros (${response.status}).`);
+      const books = await response.json();
+      if (!Array.isArray(books)) throw new Error('A resposta do catálogo está em um formato inválido.');
+      catalogBooks = books;
+      showDatabaseCatalog(catalogBooks);
+     } catch (error) {
+      const section = root.querySelector('#galeria');
+      if (!section) {
+       catalogRequestStarted = false;
+       return;
+      }
+      let notice = section.querySelector('.catalog-load-error');
+      if (!notice) {
+       notice = document.createElement('p');
+       notice.className = 'catalog-load-error text-center text-accent mt-6';
+       section.querySelector(':scope > div')?.append(notice);
+      }
+      notice.textContent = error.message;
+     }
+    };
+
+    const replaceCartIcon = (headerInner) => {
+     const cartButton = Array.from(headerInner.querySelectorAll('button'))
+      .find((button) => button.textContent.includes('Carrinho'));
+     const oldIcon = cartButton && cartButton.querySelector('svg');
+     if (!oldIcon || oldIcon.dataset.cartStyle === 'trolley') return;
+
+     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+     icon.setAttribute('viewBox', '0 0 24 24');
+     icon.setAttribute('fill', 'none');
+     icon.setAttribute('stroke', 'currentColor');
+     icon.setAttribute('stroke-width', '2');
+     icon.setAttribute('stroke-linecap', 'round');
+     icon.setAttribute('stroke-linejoin', 'round');
+     icon.setAttribute('class', oldIcon.getAttribute('class') || 'w-4 h-4');
+     icon.dataset.cartStyle = 'trolley';
+
+     const makeShape = (name, attrs) => {
+      const shape = document.createElementNS('http://www.w3.org/2000/svg', name);
+      Object.entries(attrs).forEach(([key, value]) => shape.setAttribute(key, value));
+      return shape;
+     };
+
+     icon.append(
+      makeShape('circle', { cx: '9', cy: '21', r: '1' }),
+      makeShape('circle', { cx: '20', cy: '21', r: '1' }),
+      makeShape('path', { d: 'M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 1.97-1.61L23 6H6' })
+     );
+     oldIcon.replaceWith(icon);
+    };
+
+    const renderBookstoreAbout = () => {
+     const section = root.querySelector('#vozes, #sobre');
+     if (!section) return;
+
+     section.id = 'sobre';
+     if (section.dataset.bookstoreAbout === 'true') return;
+
+     const content = section.querySelector('.relative.z-10');
+     if (!content) return;
+
+     content.innerHTML = `
+      <p class="text-[12px] tracking-caps uppercase text-accent mb-4 text-center">Sobre a livraria</p>
+      <h2 class="font-display text-4xl lg:text-6xl leading-tight text-center mb-8">Um espaço para quem ama histórias <span class="italic">intensas.</span></h2>
+      <p class="bookstore-about-copy">Se você gosta de histórias intensas, personagens cheios de camadas e romances que fogem do óbvio, chegou ao lugar certo. A Nocturnal Chronicles é uma livraria online para encontrar sua próxima leitura de dark romance. Conheça os livros, descubra novos autores e escolha sem pressa a história que combina com você.</p>
+      <div class="bookstore-about-grid">
+       <article class="bookstore-about-card">
+        <h3>Histórias intensas</h3>
+        <p>Nosso foco é dark romance: romances sombrios, personagens complexos e tramas cheias de tensão.</p>
+       </article>
+       <article class="bookstore-about-card">
+        <h3>Escolha sua próxima leitura</h3>
+        <p>Veja as sinopses, conheça os autores e confira os livros disponíveis no catálogo.</p>
+       </article>
+       <article class="bookstore-about-card">
+        <h3>Novidades da loja</h3>
+        <p>Tem livro novo chegando? Você pode acompanhar os lançamentos e outras novidades por e-mail.</p>
+       </article>
+      </div>
+      <div class="bookstore-about-action"><a href="#catalogo-livros">Explorar os livros</a></div>`;
+     section.dataset.bookstoreAbout = 'true';
+    };
+
+    const setupNewsletter = () => {
+     const section = root.querySelector('#pacto, #novidades');
+     if (!section) return;
+
+     section.id = 'novidades';
+     const label = section.querySelector('.text-accent');
+     const heading = section.querySelector('h2');
+     const description = heading && heading.nextElementSibling;
+     const form = section.querySelector('form');
+     const input = form && form.querySelector('input[type="email"]');
+     const button = form && form.querySelector('button[type="submit"]');
+     if (!label || !heading || !description || !form || !input || !button) return;
+
+     setText(label, 'Fique por dentro');
+     setText(heading, 'Receba novidades');
+     setText(description, 'Cadastre seu e-mail para saber das novidades e dos próximos lançamentos da livraria.');
+     input.placeholder = 'Seu melhor e-mail';
+     input.setAttribute('aria-label', 'Seu e-mail para receber novidades');
+     setText(button, 'Quero receber');
+
+     let feedback = form.nextElementSibling;
+     if (!feedback || !feedback.classList.contains('newsletter-feedback')) {
+      feedback = document.createElement('p');
+      feedback.className = 'newsletter-feedback';
+      feedback.setAttribute('aria-live', 'polite');
+      form.after(feedback);
+     }
+     setupNewsletterForm(form, input, button, feedback);
+    };
+
+    const renameMenuLinks = () => {
+     const links = root.querySelectorAll('header nav a[href]');
+     const menu = [
+      { href: '#top', label: 'Página inicial' },
+      { href: '#catalogo-livros', label: 'Livros' },
+      { href: '#sobre', label: 'Sobre nós' },
+      { href: '#novidades', label: 'Novidades' }
+     ];
+     links.forEach((link, index) => {
+      const item = menu[index];
+      if (!item) return;
+      if (link.getAttribute('href') !== item.href) link.setAttribute('href', item.href);
+      if (link.textContent.trim() !== item.label) link.textContent = item.label;
+     });
+    };
+
+    const mountBrandLogo = () => {
+     const brandLink = root.querySelector('header a.brand-logo-link, header > div > a:first-child');
+     if (!brandLink) return;
+     brandLink.href = '#top';
+     if (brandLink.querySelector('.brand-logo-image')) return;
+
+     const image = document.createElement('img');
+     image.className = 'brand-logo-image';
+     image.src = '/logo.png';
+     image.alt = '';
+     image.setAttribute('aria-hidden', 'true');
+     brandLink.classList.add('brand-logo-link');
+     brandLink.insertBefore(image, brandLink.firstChild);
+    };
+
+    const cropHeroImageEdge = () => {
+     const image = root.querySelector('main section img.object-cover.absolute');
+     if (image) image.classList.add('hero-background-image');
+    };
+
+    const syncMenu = () => {
+     root = document.querySelector('#root');
+     shortcut = document.querySelector('.account-shortcut');
+     if (!root || !shortcut) return;
+     refreshAccountShortcut();
+     syncPageRoute();
+     const headerInner = root.querySelector('header > div');
+     if (!headerInner) return;
+
+     if (!catalogBooks) loadCatalog();
+     cropHeroImageEdge();
+     renderBookstoreAbout();
+     setupNewsletter();
+     renameMenuLinks();
+     mountBrandLogo();
+     replaceCartIcon(headerInner);
+     const cartButton = Array.from(headerInner.querySelectorAll('button'))
+      .find((button) => button.textContent.includes('Carrinho'));
+     if (cartButton && cartButton.dataset.databaseCart !== 'true') {
+      cartButton.dataset.databaseCart = 'true';
+      cartButton.addEventListener('click', (event) => {
+       event.preventDefault();
+       event.stopImmediatePropagation();
+       const dialog = root.querySelector('.database-checkout-dialog');
+       if (!dialog) return;
+       renderShopCart();
+       if (!dialog.open) dialog.showModal();
+      }, true);
+     }
+
+     if (shortcut.parentElement !== headerInner) {
+       const cartButton = headerInner.querySelector('button');
+       headerInner.insertBefore(shortcut, cartButton || null);
+     }
+    };
+    let pendingMenuSync = false;
+    const scheduleMenuSync = () => {
+     if (pendingMenuSync) return;
+     pendingMenuSync = true;
+     requestAnimationFrame(() => {
+       pendingMenuSync = false;
+       syncMenu();
+     });
+    };
+
+    syncMenu();
+    window.addEventListener('popstate', scheduleMenuSync);
+    window.addEventListener('hashchange', scheduleMenuSync);
+    window.addEventListener('load', scheduleMenuSync);
+    const menuObserver = new MutationObserver(scheduleMenuSync);
+    menuObserver.observe(document.body, { childList: true, subtree: true });
+    let startupAttempts = 0;
+    const startupSync = setInterval(() => {
+     startupAttempts += 1;
+     if (document.querySelector('#root header > div') || startupAttempts >= 50) {
+      clearInterval(startupSync);
+      scheduleMenuSync();
+     }
+    }, 100);
+   })();
+  </script>
+ </body>
+</html>

@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#100d12">
+  <title>Painel administrativo — Nocturnal Chronicles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; --bg: #100d12; --panel: #19141b; --panel-soft: #211923; --line: #392c3c; --muted: #aa9baa; --text: #f4edf2; --gold: #dfc477; --gold-dark: #b69750; --red: #e28d96; --green: #9fd4aa; }
+    * { box-sizing: border-box; }
+    body { min-height: 100vh; margin: 0; color: var(--text); background: radial-gradient(ellipse at 55% -20%, #352338, var(--bg) 55%); font-family: Outfit, sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    button, a, select { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    a { color: var(--gold); }
+    [hidden] { display: none !important; }
+    .login-page { min-height: 100vh; display: grid; place-items: center; padding: 1.25rem; }
+    .login-card { width: min(100%, 430px); padding: 2.4rem; border: 1px solid #49364a; border-radius: 18px; background: rgba(18, 14, 20, .95); box-shadow: 0 20px 80px #0008; }
+    .login-card h1, .brand-name { margin: 0; color: var(--gold); font: 600 1.7rem Cinzel, serif; }
+    .login-card h1 { text-align: center; }
+    .login-card .intro { margin: .6rem 0 1.4rem; color: var(--muted); text-align: center; }
+    .login-card label, .field label { display: block; margin: .9rem 0 .4rem; color: #e6dce4; font-size: .9rem; }
+    input, select, textarea { width: 100%; padding: .75rem .85rem; border: 1px solid #554558; border-radius: 8px; color: var(--text); background: var(--panel-soft); }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold-dark); border-color: transparent; }
+    textarea { min-height: 90px; resize: vertical; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; min-height: 40px; padding: .6rem .9rem; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: #281f2c; font-weight: 600; text-decoration: none; transition: background .15s, border-color .15s; }
+    .btn:hover { border-color: var(--gold-dark); background: #33263a; }
+    .btn-primary { border-color: var(--gold); color: #191219; background: var(--gold); }
+    .btn-primary:hover { border-color: #f1d995; background: #f1d995; }
+    .btn-danger { color: #ffc4c8; }
+    .btn-small { min-height: 32px; padding: .35rem .6rem; font-size: .84rem; }
+    .login-card .btn { width: 100%; margin-top: 1.1rem; }
+    button:disabled { opacity: .58; cursor: wait; }
+    .login-note, .back-link { margin: 1rem 0 0; color: var(--muted); text-align: center; font-size: .9rem; }
+    .message { min-height: 1.3rem; margin: .75rem 0 0; color: var(--red); text-align: center; }
+    .message.success { color: var(--green); }
+    .shell { min-height: 100vh; }
+    .topbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem clamp(1rem, 4vw, 3.5rem); border-bottom: 1px solid #392c3ca8; background: #120f16ee; backdrop-filter: blur(14px); }
+    .brand { display: flex; align-items: center; gap: .8rem; }
+    .brand-mark { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--gold-dark); border-radius: 50%; color: var(--gold); font-size: 1.25rem; }
+    .brand-name { font-size: 1.05rem; }
+    .brand-subtitle { margin-top: .1rem; color: var(--muted); font-size: .78rem; }
+    .top-actions { display: flex; align-items: center; gap: .85rem; }
+    .admin-greeting { color: var(--muted); font-size: .9rem; }
+    .content { width: min(1440px, 100%); margin: 0 auto; padding: clamp(1rem, 3vw, 2.6rem); }
+    .page-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.35rem; }
+    h1, h2, h3 { font-family: Cinzel, Georgia, serif; }
+    .page-heading h1 { margin: 0; color: var(--gold); font-size: clamp(1.5rem, 3vw, 2.15rem); }
+    .page-heading p { margin: .45rem 0 0; color: var(--muted); }
+    .notice { margin: 1rem 0; padding: .8rem 1rem; border: 1px solid #68552a; border-radius: 9px; color: #f0dda6; background: #332a1b; font-size: .9rem; }
+    .notice.error { border-color: #713d47; color: #ffc4c8; background: #341b23; }
+    .notice.success { border-color: #376344; color: #b8e6c0; background: #192c20; }
+    .stats-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .9rem; margin-bottom: 1.4rem; }
+    .stat-card, .panel { border: 1px solid var(--line); border-radius: 13px; background: linear-gradient(145deg, #1e1821, #17131a); box-shadow: 0 10px 30px #0002; }
+    .stat-card { min-height: 112px; padding: 1rem; }
+    .stat-label { color: var(--muted); font-size: .8rem; }
+    .stat-value { margin-top: .55rem; color: var(--gold); font-size: clamp(1.05rem, 1.7vw, 1.45rem); font-weight: 700; overflow-wrap: anywhere; }
+    .stat-hint { margin-top: .25rem; color: #8d7f90; font-size: .74rem; }
+    .panel { padding: 1.1rem; }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .9rem; }
+    .panel-head h2 { margin: 0; color: #e8d8e7; font-size: 1.1rem; }
+    .section-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(260px, 1fr); gap: 1rem; margin-bottom: 1.4rem; }
+    .chart { height: 205px; display: flex; align-items: end; gap: .38rem; padding: 1.1rem .3rem 0; overflow-x: auto; }
+    .bar-column { min-width: 22px; height: 100%; display: flex; flex: 1 0 22px; flex-direction: column; justify-content: end; align-items: center; gap: .45rem; }
+    .bar-value { color: #b9aabd; font-size: .65rem; }
+    .bar { width: min(100%, 28px); min-height: 3px; border-radius: 5px 5px 0 0; background: linear-gradient(#e1c878, #9d7840); }
+    .bar-date { color: #8f8291; font-size: .62rem; writing-mode: vertical-rl; transform: rotate(180deg); }
+    .top-pages { display: grid; gap: .3rem; }
+    .top-page-row { display: flex; justify-content: space-between; gap: .8rem; padding: .55rem .1rem; border-bottom: 1px solid #332837; color: #d4c6d4; font-size: .88rem; }
+    .top-page-row:last-child { border: 0; }
+    .top-page-count { color: var(--gold); white-space: nowrap; }
+    .section { margin: 1.5rem 0; scroll-margin-top: 80px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+    .section-header h2 { margin: 0; color: #e8d8e7; font-size: 1.35rem; }
+    .section-header p { margin: .25rem 0 0; color: var(--muted); font-size: .88rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: .7rem .65rem; color: #aa9baa; font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .045em; white-space: nowrap; }
+    td { padding: .72rem .65rem; border-top: 1px solid #302633; color: #e4dbe4; font-size: .87rem; vertical-align: middle; }
+    .book-cell { display: flex; align-items: center; gap: .7rem; min-width: 190px; }
+    .book-cover { width: 40px; height: 54px; flex: 0 0 auto; object-fit: cover; border-radius: 5px; background: #302633; }
+    .book-cover-placeholder { display: grid; place-items: center; color: var(--gold); font-size: 1.1rem; }
+    .book-title { font-weight: 600; }
+    .muted { color: var(--muted); font-size: .8rem; }
+    .pill { display: inline-flex; padding: .23rem .55rem; border: 1px solid #57455b; border-radius: 999px; color: #d4c1dc; font-size: .75rem; white-space: nowrap; }
+    .status-pendente { border-color: #766032; color: #f0d590; }
+    .status-pago, .status-entregue { border-color: #376344; color: #b8e6c0; }
+    .status-enviado { border-color: #405b76; color: #b8d9f1; }
+    .status-cancelado { border-color: #713d47; color: #ffc4c8; }
+    .row-actions { display: flex; align-items: center; gap: .4rem; white-space: nowrap; }
+    .order-status { min-width: 130px; padding: .45rem .5rem; font-size: .83rem; }
+    .empty { padding: 2rem 1rem; color: var(--muted); text-align: center; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; overflow: auto; padding: 1rem; background: #08070bcb; }
+    .modal { width: min(100%, 680px); max-height: min(92vh, 850px); overflow: auto; padding: 1.3rem; border: 1px solid #59455b; border-radius: 14px; background: #19141b; box-shadow: 0 25px 90px #000b; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .modal-head h2 { margin: 0; color: var(--gold); font-size: 1.35rem; }
+    .icon-button { width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; color: var(--text); background: var(--panel-soft); font-size: 1.2rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .2rem 1rem; }
+    .span-2 { grid-column: 1 / -1; }
+    .check-row { display: flex; flex-wrap: wrap; gap: 1rem; margin: 1rem 0; }
+    .check-label { display: inline-flex !important; align-items: center; gap: .5rem; margin: 0 !important; }
+    .check-label input { width: auto; accent-color: var(--gold-dark); }
+    .form-actions { display: flex; justify-content: end; gap: .7rem; margin-top: 1.2rem; }
+    @media (max-width: 1000px) { .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 720px) { .section-grid { grid-template-columns: 1fr; } .topbar { align-items: flex-start; } .admin-greeting { display: none; } }
+    @media (max-width: 520px) { .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .stat-card { min-height: 100px; padding: .75rem; } .brand-name { font-size: .9rem; } .top-actions .btn { padding: .45rem .6rem; font-size: .8rem; } .content { padding: 1rem .75rem; } .panel { padding: .8rem; } .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } .page-heading { align-items: flex-start; flex-direction: column; } .login-card { padding: 1.6rem; } }
+  </style>
+</head>
+<body>
+  <section id="login-page" class="login-page">
+    <main class="login-card">
+      <h1>Área administrativa</h1>
+      <p class="intro">Gerencie livros, pedidos e resultados da Nocturnal.</p>
+      <form id="admin-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username" required maxlength="255">
+        <label for="password">Senha</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required minlength="8" maxlength="72">
+        <button id="login-submit" class="btn btn-primary" type="submit">Entrar</button>
+      </form>
+      <p id="login-message" class="message" role="status" aria-live="polite"></p>
+    </main>
+  </section>
+
+  <div id="dashboard" class="shell" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">N</div>
+        <div><div class="brand-name">Nocturnal Chronicles</div><div class="brand-subtitle">Painel administrativo</div></div>
+      </div>
+      <div class="top-actions">
+        <span id="admin-greeting" class="admin-greeting"></span>
+        <a class="btn" href="/" target="_blank" rel="noopener">Ver loja ↗</a>
+        <button id="logout" class="btn" type="button">Sair</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div class="page-heading">
+        <div><h1>Visão geral</h1><p>Acompanhe a loja, o catálogo e os pedidos em um só lugar.</p></div>
+        <button id="refresh" class="btn" type="button">↻ Atualizar dados</button>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section class="stats-grid" aria-label="Resumo da loja">
+        <article class="stat-card"><div class="stat-label">Livros no catálogo</div><div id="stat-books" class="stat-value">—</div><div class="stat-hint">publicados e rascunhos</div></article>
+        <article class="stat-card"><div class="stat-label">Pedidos</div><div id="stat-orders" class="stat-value">—</div><div class="stat-hint">todos os status</div></article>
+        <article class="stat-card"><div class="stat-label">Receita confirmada</div><div id="stat-revenue" class="stat-value">—</div><div class="stat-hint">pedidos pagos, enviados e entregues</div></article>
+        <article class="stat-card"><div class="stat-label">Pagamentos pendentes</div><div id="stat-pending" class="stat-value">—</div><div class="stat-hint">aguardando confirmação manual</div></article>
+        <article class="stat-card"><div class="stat-label">Visitas hoje</div><div id="stat-views" class="stat-value">—</div><div class="stat-hint">páginas visualizadas</div></article>
+        <article class="stat-card"><div class="stat-label">Assinantes ativos</div><div id="stat-subscribers" class="stat-value">—</div><div class="stat-hint">lista de novidades</div></article>
+      </section>
+
+      <section class="section-grid">
+        <article class="panel">
+          <div class="panel-head"><h2>Visitas nos últimos 30 dias</h2><span class="muted">por dia</span></div>
+          <div id="views-chart" class="chart"><div class="empty">Carregando estatísticas…</div></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head"><h2>Páginas populares</h2></div>
+          <div id="top-pages" class="top-pages"><div class="empty">Carregando páginas…</div></div>
+        </article>
+      </section>
+
+      <section id="books-section" class="section">
+        <div class="section-header">
+          <div><h2>Livros</h2><p>Cadastre, edite, publique ou remova itens do catálogo.</p></div>
+          <button id="add-book" class="btn btn-primary" type="button">＋ Adicionar livro</button>
+        </div>
+        <article class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Livro</th><th>Categoria</th><th>Preço</th><th>Visibilidade</th><th>Ações</th></tr></thead>
+              <tbody id="books-body"><tr><td colspan="5" class="empty">Carregando livros…</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section id="orders-section" class="section">
+        <div class="section-header">
+          <div><h2>Pedidos e pagamentos</h2><p>Os pagamentos via Pix são confirmados automaticamente e o PDF é enviado ao cliente.</p></div>
+        </div>
+        <div class="notice">Para pedidos pagos por fora do checkout, confira o recebimento antes de marcar como pago. Essa ação também envia o PDF ao cliente.</div>
+        <article class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Pedido</th><th>Cliente</th><th>Livro</th><th>Total</th><th>Status</th><th>Atualizar</th></tr></thead>
+              <tbody id="orders-body"><tr><td colspan="6" class="empty">Carregando pedidos…</td></tr></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div id="book-modal" class="modal-backdrop" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="book-modal-title">
+      <div class="modal-head"><h2 id="book-modal-title">Adicionar livro</h2><button id="close-modal" class="icon-button" type="button" aria-label="Fechar">×</button></div>
+      <form id="book-form">
+        <input id="book-id" name="id" type="hidden">
+        <div class="form-grid">
+          <div class="field"><label for="book-title">Título</label><input id="book-title" name="title" required maxlength="255"></div>
+          <div class="field"><label for="book-author">Autor(a)</label><input id="book-author" name="author" required maxlength="255"></div>
+          <div class="field"><label for="book-price">Preço (R$)</label><input id="book-price" name="price" type="number" min="0" step="0.01" required></div>
+          <div class="field"><label for="book-category">Categoria</label><input id="book-category" name="category" value="Dark Romance" maxlength="100"></div>
+          <div class="field span-2"><label for="book-description">Descrição</label><textarea id="book-description" name="description"></textarea></div>
+          <div class="field span-2"><label for="book-cover">Capa (JPG, PNG ou WebP — até 5 MB)</label><input id="book-cover" name="cover" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></div>
+          <div class="field span-2"><label for="book-ebook">PDF do livro (até 18 MB)</label><input id="book-ebook" name="ebook" type="file" accept=".pdf,application/pdf"><small>O arquivo fica privado e só é enviado por e-mail após a confirmação do pagamento.</small></div>
+        </div>
+        <div class="check-row">
+          <label class="check-label"><input id="book-featured" name="is_featured" type="checkbox"> Destacar na loja</label>
+          <label class="check-label"><input id="book-published" name="is_published" type="checkbox" checked> Publicado</label>
+        </div>
+        <p id="book-form-message" class="message" role="status" aria-live="polite"></p>
+        <div class="form-actions"><button id="cancel-book" class="btn" type="button">Cancelar</button><button id="save-book" class="btn btn-primary" type="submit">Salvar livro</button></div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const tokenKey = 'nocturnal_admin_token';
+      const loginPage = document.querySelector('#login-page');
+      const dashboard = document.querySelector('#dashboard');
+      const loginForm = document.querySelector('#admin-form');
+      const loginMessage = document.querySelector('#login-message');
+      const loginSubmit = document.querySelector('#login-submit');
+      const modal = document.querySelector('#book-modal');
+      const bookForm = document.querySelector('#book-form');
+      let admin = null;
+      let books = [];
+      let orders = [];
+
+      const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+      const money = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
+      const dateTime = (value) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+      const statusNames = { pendente: 'Pendente', pago: 'Pago', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+      const validStatuses = Object.keys(statusNames);
+
+      function showNotice(text, type = '') {
+        const notice = document.querySelector('#notice');
+        notice.textContent = text;
+        notice.className = `notice ${type}`.trim();
+        notice.hidden = !text;
+        if (text) window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function showLogin(message = '') {
+        dashboard.hidden = true;
+        loginPage.hidden = false;
+        loginMessage.textContent = message;
+        loginMessage.className = 'message';
+      }
+
+      async function api(url, options = {}) {
+        const token = localStorage.getItem(tokenKey);
+        const headers = new Headers(options.headers || {});
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+        const response = await fetch(url, { ...options, headers });
+        const contentType = response.headers.get('content-type') || '';
+        const data = contentType.includes('application/json') ? await response.json() : null;
+        if (response.status === 401 && token) {
+          localStorage.removeItem(tokenKey);
+          showLogin('Sua sessão expirou. Entre novamente.');
+        }
+        if (!response.ok) throw new Error(data?.error || `A solicitação falhou (${response.status}).`);
+        return data;
+      }
+
+      function renderBooks() {
+        const body = document.querySelector('#books-body');
+        if (!books.length) {
+          body.innerHTML = '<tr><td colspan="5" class="empty">Nenhum livro cadastrado ainda.</td></tr>';
+          return;
+        }
+        body.innerHTML = books.map((book) => {
+          const cover = book.cover_image
+            ? `<img class="book-cover" src="${escapeHtml(book.cover_image)}" alt="" loading="lazy">`
+            : '<span class="book-cover book-cover-placeholder" aria-hidden="true">N</span>';
+          return `<tr>
+            <td><div class="book-cell">${cover}<div><div class="book-title">${escapeHtml(book.title)}</div><div class="muted">${escapeHtml(book.author)} · ${book.ebook_available ? 'PDF cadastrado' : 'PDF pendente'}</div></div></div></td>
+            <td>${escapeHtml(book.category || '—')}</td>
+            <td>${money(book.price)}</td>
+            <td><span class="pill">${book.is_published ? 'Publicado' : 'Rascunho'}</span></td>
+            <td><div class="row-actions"><button class="btn btn-small" data-edit-book="${Number(book.id)}" type="button">Editar</button><button class="btn btn-small btn-danger" data-delete-book="${Number(book.id)}" type="button">Remover</button></div></td>
+          </tr>`;
+        }).join('');
+      }
+
+      function renderOrders() {
+        const body = document.querySelector('#orders-body');
+        if (!orders.length) {
+          body.innerHTML = '<tr><td colspan="6" class="empty">Ainda não há pedidos.</td></tr>';
+          return;
+        }
+        body.innerHTML = orders.map((order) => {
+          const selected = validStatuses.includes(order.status) ? order.status : 'pendente';
+          const choices = validStatuses.map((status) => `<option value="${status}"${status === selected ? ' selected' : ''}>${statusNames[status]}</option>`).join('');
+          return `<tr>
+            <td><strong>#${Number(order.id)}</strong><div class="muted">${escapeHtml(dateTime(order.created_at))}</div></td>
+            <td>${escapeHtml(order.customer_name)}<div class="muted">${escapeHtml(order.customer_email)}</div></td>
+            <td>${escapeHtml(order.book_title || 'Livro removido')}<div class="muted">Qtd: ${Number(order.quantity) || 1}${order.ebook_sent_at ? ' · PDF enviado' : ''}</div></td>
+            <td>${money(order.total_price)}</td>
+            <td><span class="pill status-${escapeHtml(selected)}">${statusNames[selected]}</span></td>
+            <td><div class="row-actions"><select class="order-status" aria-label="Novo status do pedido ${Number(order.id)}" data-order-status="${Number(order.id)}">${choices}</select><button class="btn btn-small btn-primary" data-save-order="${Number(order.id)}" type="button">Salvar</button></div></td>
+          </tr>`;
+        }).join('');
+      }
+
+      function renderStats(summary, views, pages) {
+        document.querySelector('#stat-books').textContent = summary.total_books ?? books.length;
+        document.querySelector('#stat-orders').textContent = summary.total_orders ?? orders.length;
+        document.querySelector('#stat-revenue').textContent = money(summary.confirmed_revenue);
+        document.querySelector('#stat-pending').textContent = money(summary.pending_revenue);
+        document.querySelector('#stat-views').textContent = Number(summary.views_today || 0).toLocaleString('pt-BR');
+        document.querySelector('#stat-subscribers').textContent = Number(summary.total_subscribers || 0).toLocaleString('pt-BR');
+
+        const chart = document.querySelector('#views-chart');
+        if (!views.length || views.every((entry) => Number(entry.views) === 0)) {
+          chart.innerHTML = '<div class="empty">Ainda não há visitas registradas neste período.</div>';
+        } else {
+          const max = Math.max(1, ...views.map((entry) => Number(entry.views)));
+          chart.innerHTML = views.map((entry) => {
+            const count = Number(entry.views) || 0;
+            const [year, month, day] = String(entry.date).slice(0, 10).split('-').map(Number);
+            const labelDate = new Date(year, month - 1, day);
+            const shortDate = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(labelDate);
+            const height = Math.max(2, count / max * 100);
+            return `<div class="bar-column" title="${escapeHtml(shortDate)}: ${count} visitas"><span class="bar-value">${count || ''}</span><div class="bar" style="height:${height}%"></div><span class="bar-date">${escapeHtml(shortDate)}</span></div>`;
+          }).join('');
+        }
+
+        const pagesEl = document.querySelector('#top-pages');
+        pagesEl.innerHTML = pages.length
+          ? pages.map((page) => `<div class="top-page-row"><span>${escapeHtml(page.page || '/')}</span><span class="top-page-count">${Number(page.views).toLocaleString('pt-BR')} visitas</span></div>`).join('')
+          : '<div class="empty">Ainda não há páginas populares.</div>';
+      }
+
+      async function loadDashboard() {
+        showNotice('');
+        try {
+          const [summary, views, pages, loadedBooks, loadedOrders] = await Promise.all([
+            api('/api/stats/overview'),
+            api('/api/stats/views'),
+            api('/api/stats/top-pages'),
+            api('/api/books'),
+            api('/api/orders')
+          ]);
+          books = loadedBooks;
+          orders = loadedOrders;
+          renderBooks();
+          renderOrders();
+          renderStats(summary, views, pages);
+        } catch (error) {
+          if (localStorage.getItem(tokenKey)) showNotice(error.message, 'error');
+        }
+      }
+
+      async function enterDashboard(token) {
+        localStorage.setItem(tokenKey, token);
+        const result = await api('/api/auth/admin/me');
+        admin = result.admin;
+        loginPage.hidden = true;
+        dashboard.hidden = false;
+        document.querySelector('#admin-greeting').textContent = `Olá, ${admin.name}`;
+        await loadDashboard();
+      }
+
+      function resetBookForm() {
+        bookForm.reset();
+        document.querySelector('#book-id').value = '';
+        document.querySelector('#book-category').value = 'Dark Romance';
+        document.querySelector('#book-published').checked = true;
+        document.querySelector('#book-form-message').textContent = '';
+        document.querySelector('#book-modal-title').textContent = 'Adicionar livro';
+        document.querySelector('#save-book').textContent = 'Salvar livro';
+      }
+
+      function openBookModal(book = null) {
+        resetBookForm();
+        if (book) {
+          document.querySelector('#book-modal-title').textContent = 'Editar livro';
+          document.querySelector('#save-book').textContent = 'Salvar alterações';
+          document.querySelector('#book-id').value = book.id;
+          document.querySelector('#book-title').value = book.title || '';
+          document.querySelector('#book-author').value = book.author || '';
+          document.querySelector('#book-price').value = book.price ?? 0;
+          document.querySelector('#book-category').value = book.category || '';
+          document.querySelector('#book-description').value = book.description || '';
+          document.querySelector('#book-featured').checked = Boolean(book.is_featured);
+          document.querySelector('#book-published').checked = Boolean(book.is_published);
+        }
+        modal.hidden = false;
+        document.querySelector('#book-title').focus();
+      }
+
+      function closeBookModal() {
+        modal.hidden = true;
+        resetBookForm();
+      }
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        loginSubmit.disabled = true;
+        loginMessage.textContent = '';
+        try {
+          const payload = Object.fromEntries(new FormData(loginForm));
+          const result = await api('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          await enterDashboard(result.token);
+        } catch (error) {
+          loginMessage.textContent = error.message;
+        } finally {
+          loginSubmit.disabled = false;
+        }
+      });
+
+      document.querySelector('#logout').addEventListener('click', () => {
+        localStorage.removeItem(tokenKey);
+        admin = null;
+        showLogin('Você saiu da área administrativa.');
+      });
+      document.querySelector('#refresh').addEventListener('click', loadDashboard);
+      document.querySelector('#add-book').addEventListener('click', () => openBookModal());
+      document.querySelector('#close-modal').addEventListener('click', closeBookModal);
+      document.querySelector('#cancel-book').addEventListener('click', closeBookModal);
+      modal.addEventListener('click', (event) => { if (event.target === modal) closeBookModal(); });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modal.hidden) closeBookModal(); });
+
+      document.querySelector('#books-body').addEventListener('click', async (event) => {
+        const editButton = event.target.closest('[data-edit-book]');
+        const deleteButton = event.target.closest('[data-delete-book]');
+        if (editButton) {
+          const book = books.find((item) => item.id === Number(editButton.dataset.editBook));
+          if (book) openBookModal(book);
+        }
+        if (deleteButton) {
+          const book = books.find((item) => item.id === Number(deleteButton.dataset.deleteBook));
+          if (!book || !window.confirm(`Remover "${book.title}" do catálogo?`)) return;
+          deleteButton.disabled = true;
+          try {
+            await api(`/api/books/${book.id}`, { method: 'DELETE' });
+            showNotice('Livro removido do catálogo.', 'success');
+            await loadDashboard();
+          } catch (error) {
+            showNotice(error.message, 'error');
+            deleteButton.disabled = false;
+          }
+        }
+      });
+
+      bookForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const saveButton = document.querySelector('#save-book');
+        const message = document.querySelector('#book-form-message');
+        saveButton.disabled = true;
+        message.textContent = '';
+        try {
+          const id = document.querySelector('#book-id').value;
+          const formData = new FormData(bookForm);
+          formData.set('is_featured', String(document.querySelector('#book-featured').checked));
+          formData.set('is_published', String(document.querySelector('#book-published').checked));
+          if (!document.querySelector('#book-cover').files.length) formData.delete('cover');
+          await api(id ? `/api/books/${id}` : '/api/books', { method: id ? 'PUT' : 'POST', body: formData });
+          closeBookModal();
+          showNotice(id ? 'Livro atualizado com sucesso.' : 'Livro adicionado ao catálogo.', 'success');
+          await loadDashboard();
+        } catch (error) {
+          message.textContent = error.message;
+        } finally {
+          saveButton.disabled = false;
+        }
+      });
+
+      document.querySelector('#orders-body').addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-save-order]');
+        if (!button) return;
+        const id = Number(button.dataset.saveOrder);
+        const select = document.querySelector(`[data-order-status="${id}"]`);
+        button.disabled = true;
+        try {
+          await api(`/api/orders/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: select.value })
+          });
+          showNotice(`Pedido #${id} atualizado para ${statusNames[select.value]}.`, 'success');
+          await loadDashboard();
+        } catch (error) {
+          showNotice(error.message, 'error');
+          button.disabled = false;
+        }
+      });
+
+      (async () => {
+        const token = localStorage.getItem(tokenKey);
+        if (!token) return;
+        try {
+          await enterDashboard(token);
+        } catch (error) {
+          localStorage.removeItem(tokenKey);
+          showLogin(`Não foi possível validar a sessão. ${error.message}`);
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
