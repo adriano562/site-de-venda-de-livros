@@ -2,18 +2,12 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const crypto = require('crypto');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { uploadsDir } = require('../config/storage');
+const { deleteObject, getPublicObjectUrl, uploadObject } = require('../config/storage');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `banner_${Date.now()}${ext}`);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // GET /api/banners - Público (ativos) ou Admin (todos)
 router.get('/', async (req, res) => {
@@ -33,9 +27,15 @@ router.get('/', async (req, res) => {
 
 // POST /api/banners - Admin
 router.post('/', auth, upload.single('image'), async (req, res) => {
+  let objectPath;
   try {
     const { title, subtitle, cta_text, cta_link, is_active, position } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    let image_url = null;
+    if (req.file) {
+      objectPath = `banner_${crypto.randomUUID()}${path.extname(req.file.originalname).toLowerCase()}`;
+      await uploadObject('uploads', objectPath, req.file.buffer, req.file.mimetype);
+      image_url = getPublicObjectUrl('uploads', objectPath);
+    }
 
     const result = await pool.query(
       `INSERT INTO banners (title, subtitle, image_url, cta_text, cta_link, is_active, position)
@@ -44,6 +44,13 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
+    if (objectPath) {
+      try {
+        await deleteObject('uploads', objectPath);
+      } catch (cleanupError) {
+        console.error('Erro ao remover banner incompleto do Supabase Storage:', cleanupError);
+      }
+    }
     console.error('Erro ao criar banner:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }
@@ -51,6 +58,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
 
 // PUT /api/banners/:id - Admin
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
+  let objectPath;
   try {
     const { title, subtitle, cta_text, cta_link, is_active, position } = req.body;
     const existing = await pool.query('SELECT * FROM banners WHERE id = $1', [req.params.id]);
@@ -58,7 +66,12 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
       return res.status(404).json({ error: 'Banner não encontrado.' });
     }
 
-    const image_url = req.file ? `/uploads/${req.file.filename}` : existing.rows[0].image_url;
+    let image_url = existing.rows[0].image_url;
+    if (req.file) {
+      objectPath = `banner_${crypto.randomUUID()}${path.extname(req.file.originalname).toLowerCase()}`;
+      await uploadObject('uploads', objectPath, req.file.buffer, req.file.mimetype);
+      image_url = getPublicObjectUrl('uploads', objectPath);
+    }
 
     const result = await pool.query(
       `UPDATE banners SET title=$1, subtitle=$2, image_url=$3, cta_text=$4, cta_link=$5, is_active=$6, position=$7
@@ -76,6 +89,14 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
+    if (objectPath) {
+      try {
+        await deleteObject('uploads', objectPath);
+      } catch (cleanupError) {
+        console.error('Erro ao remover banner incompleto do Supabase Storage:', cleanupError);
+      }
+    }
+    console.error('Erro ao editar banner:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });

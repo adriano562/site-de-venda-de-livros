@@ -32,7 +32,16 @@ test('Pix do Mercado Pago confirmado por webhook envia os PDFs uma única vez', 
   process.env.MAIL_FROM = 'sender@test.invalid';
 
   const emails = [];
-  nodemailer.createTransport = () => ({ sendMail: async (message) => emails.push(message) });
+  nodemailer.createTransport = () => ({
+    sendMail: async (message) => {
+      const attachments = await Promise.all(message.attachments.map(async (attachment) => {
+        const chunks = [];
+        for await (const chunk of attachment.content) chunks.push(chunk);
+        return { ...attachment, content: Buffer.concat(chunks) };
+      }));
+      emails.push({ ...message, attachments });
+    }
+  });
 
   let savedOrders = [];
   let nextOrderId = 77;
@@ -192,7 +201,7 @@ test('Pix do Mercado Pago confirmado por webhook envia os PDFs uma única vez', 
     assert.equal(emails.length, 1);
     assert.equal(emails[0].to, 'cliente@example.com');
     assert.equal(emails[0].attachments.length, 2);
-    assert.ok(emails[0].attachments.every((attachment) => attachment.path === pdfPath));
+    assert.ok(emails[0].attachments.every((attachment) => attachment.content.toString('ascii') === '%PDF-1.4'));
 
     const duplicateWebhook = await webhookRequest();
     assert.equal(duplicateWebhook.status, 200);

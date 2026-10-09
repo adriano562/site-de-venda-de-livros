@@ -2,34 +2,13 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const crypto = require('crypto');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { uploadsDir, ebookDir } = require('../config/storage');
+const { deleteObject, getPublicObjectUrl, privateFileExists, uploadObject } = require('../config/storage');
 
-async function removeUploadedFiles(files) {
-  await Promise.all(files.map(async (file) => {
-    try {
-      await fs.promises.unlink(file.path);
-    } catch (err) {
-      if (err.code !== 'ENOENT') console.error('Erro ao remover upload inválido:', err);
-    }
-  }));
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, file.fieldname === 'ebook' ? ebookDir : uploadsDir),
-  filename: (req, file, cb) => {
-    if (file.fieldname === 'ebook') {
-      return cb(null, `ebook_${crypto.randomUUID()}.pdf`);
-    }
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `book_${Date.now()}${ext}`);
-  }
-});
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (file.fieldname === 'ebook') {
@@ -44,8 +23,6 @@ const upload = multer({
 function uploadBookFiles(req, res, next) {
   upload.fields([{ name: 'cover', maxCount: 1 }, { name: 'ebook', maxCount: 1 }])(req, res, async (err) => {
     if (!err) return next();
-    const uploadedFiles = Object.values(req.files || {}).flat();
-    await removeUploadedFiles(uploadedFiles);
     const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
     return res.status(status).json({ error: err.message || 'Não foi possível carregar os arquivos do livro.' });
   });
@@ -55,32 +32,53 @@ async function validateBookFiles(req, res, next) {
   const cover = req.files?.cover?.[0];
   const ebook = req.files?.ebook?.[0];
   if (cover && cover.size > 5 * 1024 * 1024) {
-    await removeUploadedFiles(Object.values(req.files).flat());
     return res.status(413).json({ error: 'A capa deve ter no máximo 5 MB.' });
   }
   if (ebook) {
     if (ebook.size > 18 * 1024 * 1024) {
-      await removeUploadedFiles(Object.values(req.files).flat());
       return res.status(413).json({ error: 'O PDF do livro deve ter no máximo 18 MB para envio por e-mail.' });
     }
-    let file;
-    try {
-      file = await fs.promises.open(ebook.path, 'r');
-      const header = Buffer.alloc(5);
-      const { bytesRead } = await file.read(header, 0, 5, 0);
-      if (bytesRead !== 5 || header.toString('ascii') !== '%PDF-') {
-        await removeUploadedFiles([ebook]);
-        return res.status(400).json({ error: 'O arquivo enviado não parece ser um PDF válido.' });
-      }
-    } catch (err) {
-      console.error('Erro ao validar o PDF enviado:', err);
-      await removeUploadedFiles([ebook]);
-      return res.status(400).json({ error: 'Não foi possível validar o PDF enviado.' });
-    } finally {
-      if (file) await file.close();
+    if (ebook.buffer.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      return res.status(400).json({ error: 'O arquivo enviado não parece ser um PDF válido.' });
     }
   }
   next();
+}
+
+async function removeStoredObjects(objects) {
+  await Promise.all(objects.map(async ([bucket, objectPath]) => {
+    try {
+      await deleteObject(bucket, objectPath);
+    } catch (error) {
+      console.error('Erro ao remover upload incompleto do Supabase Storage:', error);
+    }
+  }));
+}
+
+async function saveBookFiles(files) {
+  const uploadedObjects = [];
+  let coverImage = null;
+  let ebookPath = null;
+  try {
+    const cover = files?.cover?.[0];
+    const ebook = files?.ebook?.[0];
+    if (cover) {
+      const objectPath = `book_${crypto.randomUUID()}${path.extname(cover.originalname).toLowerCase()}`;
+      await uploadObject('uploads', objectPath, cover.buffer, cover.mimetype);
+      uploadedObjects.push(['uploads', objectPath]);
+      coverImage = getPublicObjectUrl('uploads', objectPath);
+    }
+    if (ebook) {
+      const objectPath = `book_${crypto.randomUUID()}.pdf`;
+      await uploadObject('ebooks', objectPath, ebook.buffer, 'application/pdf');
+      uploadedObjects.push(['ebooks', objectPath]);
+      ebookPath = `ebooks/${objectPath}`;
+    }
+    return { coverImage, ebookPath, uploadedObjects };
+  } catch (error) {
+    await removeStoredObjects(uploadedObjects);
+    throw error;
+  }
 }
 
 function publicBook(book) {
@@ -122,19 +120,19 @@ router.get('/:id', async (req, res) => {
 router.post('/', auth, uploadBookFiles, validateBookFiles, async (req, res) => {
   try {
     const { title, author, description, price, category, is_featured, is_published } = req.body;
-    const coverFile = req.files?.cover?.[0];
-    const ebookFile = req.files?.ebook?.[0];
-    const cover_image = coverFile ? `/uploads/${coverFile.filename}` : null;
-    const ebook_path = ebookFile ? ebookFile.path : null;
-
-    const result = await pool.query(
-      `INSERT INTO books (title, author, description, price, cover_image, ebook_path, category, is_featured, is_published)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [title, author, description || '', parseFloat(price) || 0, cover_image, ebook_path, category || 'Dark Romance', is_featured === 'true', is_published !== 'false']
-    );
-    res.status(201).json(publicBook(result.rows[0]));
+    const savedFiles = await saveBookFiles(req.files);
+    try {
+      const result = await pool.query(
+        `INSERT INTO books (title, author, description, price, cover_image, ebook_path, category, is_featured, is_published)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        [title, author, description || '', parseFloat(price) || 0, savedFiles.coverImage, savedFiles.ebookPath, category || 'Dark Romance', is_featured === 'true', is_published !== 'false']
+      );
+      res.status(201).json(publicBook(result.rows[0]));
+    } catch (error) {
+      await removeStoredObjects(savedFiles.uploadedObjects);
+      throw error;
+    }
   } catch (err) {
-    await removeUploadedFiles(Object.values(req.files || {}).flat());
     console.error('Erro ao criar livro:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }
@@ -149,30 +147,30 @@ router.put('/:id', auth, uploadBookFiles, validateBookFiles, async (req, res) =>
       return res.status(404).json({ error: 'Livro não encontrado.' });
     }
 
-    const coverFile = req.files?.cover?.[0];
-    const ebookFile = req.files?.ebook?.[0];
-    const cover_image = coverFile ? `/uploads/${coverFile.filename}` : existing.rows[0].cover_image;
-    const ebook_path = ebookFile ? ebookFile.path : existing.rows[0].ebook_path;
-
-    const result = await pool.query(
-      `UPDATE books SET title=$1, author=$2, description=$3, price=$4, cover_image=$5, ebook_path=$6, category=$7, is_featured=$8, is_published=$9
-       WHERE id=$10 RETURNING *`,
-      [
-        title || existing.rows[0].title,
-        author || existing.rows[0].author,
-        description !== undefined ? description : existing.rows[0].description,
-        price !== undefined ? parseFloat(price) : existing.rows[0].price,
-        cover_image,
-        ebook_path,
-        category || existing.rows[0].category,
-        is_featured !== undefined ? is_featured === 'true' : existing.rows[0].is_featured,
-        is_published !== undefined ? is_published === 'true' : existing.rows[0].is_published,
-        req.params.id
-      ]
-    );
-    res.json(publicBook(result.rows[0]));
+    const savedFiles = await saveBookFiles(req.files);
+    try {
+      const result = await pool.query(
+        `UPDATE books SET title=$1, author=$2, description=$3, price=$4, cover_image=$5, ebook_path=$6, category=$7, is_featured=$8, is_published=$9
+         WHERE id=$10 RETURNING *`,
+        [
+          title || existing.rows[0].title,
+          author || existing.rows[0].author,
+          description !== undefined ? description : existing.rows[0].description,
+          price !== undefined ? parseFloat(price) : existing.rows[0].price,
+          savedFiles.coverImage || existing.rows[0].cover_image,
+          savedFiles.ebookPath || existing.rows[0].ebook_path,
+          category || existing.rows[0].category,
+          is_featured !== undefined ? is_featured === 'true' : existing.rows[0].is_featured,
+          is_published !== undefined ? is_published === 'true' : existing.rows[0].is_published,
+          req.params.id
+        ]
+      );
+      res.json(publicBook(result.rows[0]));
+    } catch (error) {
+      await removeStoredObjects(savedFiles.uploadedObjects);
+      throw error;
+    }
   } catch (err) {
-    await removeUploadedFiles(Object.values(req.files || {}).flat());
     console.error('Erro ao editar livro:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }

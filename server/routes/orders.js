@@ -1,10 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
-const fs = require('fs');
 const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 const { sendBookByEmail } = require('../services/mailer');
+const { privateFileExists } = require('../config/storage');
 
 function hasValidWebhookSignature(signature, requestId, paymentId, secret) {
   if (typeof signature !== 'string' || !requestId || !paymentId || !secret) return false;
@@ -83,7 +83,8 @@ router.post('/', auth.user, async (req, res) => {
       quantity: quantities.get(Number(book.id)),
       unitAmount: Math.round(Number(book.price) * 100)
     }));
-    if (books.some((book) => !book.ebook_path || !fs.existsSync(book.ebook_path))) {
+    const availableFiles = await Promise.all(books.map((book) => privateFileExists(book.ebook_path)));
+    if (availableFiles.some((available) => !available)) {
       return res.status(409).json({ error: 'Um ou mais livros ainda não estão disponíveis em PDF para venda.' });
     }
     const amount = books.reduce((total, book) => total + book.unitAmount * book.quantity, 0);
