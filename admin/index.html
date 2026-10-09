@@ -272,6 +272,41 @@
         return data;
       }
 
+      async function uploadAdminFile(file, kind) {
+        if (kind === 'ebook') {
+          const header = await file.slice(0, 5).arrayBuffer();
+          if (new TextDecoder().decode(header) !== '%PDF-') {
+            throw new Error('O arquivo selecionado não parece ser um PDF válido.');
+          }
+        }
+
+        const signed = await api('/api/storage/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kind,
+            filename: file.name,
+            content_type: file.type,
+            size: file.size
+          })
+        });
+        const response = await fetch(signed.upload_url, {
+          method: 'PUT',
+          headers: {
+            apikey: signed.api_key,
+            Authorization: `Bearer ${signed.api_key}`,
+            'Content-Type': file.type
+          },
+          body: file
+        });
+        if (!response.ok) {
+          const details = await response.text();
+          console.error('Falha no upload direto para o Supabase Storage:', response.status, details);
+          throw new Error(`Não foi possível enviar o arquivo (${response.status}). Confira se os buckets do Supabase existem.`);
+        }
+        return signed.object_path;
+      }
+
       function renderBooks() {
         const body = document.querySelector('#books-body');
         if (!books.length) {
@@ -465,11 +500,23 @@
         message.textContent = '';
         try {
           const id = document.querySelector('#book-id').value;
-          const formData = new FormData(bookForm);
-          formData.set('is_featured', String(document.querySelector('#book-featured').checked));
-          formData.set('is_published', String(document.querySelector('#book-published').checked));
-          if (!document.querySelector('#book-cover').files.length) formData.delete('cover');
-          await api(id ? `/api/books/${id}` : '/api/books', { method: id ? 'PUT' : 'POST', body: formData });
+          const payload = Object.fromEntries(new FormData(bookForm));
+          delete payload.id;
+          delete payload.cover;
+          delete payload.ebook;
+          payload.is_featured = String(document.querySelector('#book-featured').checked);
+          payload.is_published = String(document.querySelector('#book-published').checked);
+
+          const coverFile = document.querySelector('#book-cover').files[0];
+          const ebookFile = document.querySelector('#book-ebook').files[0];
+          if (coverFile) payload.cover_path = await uploadAdminFile(coverFile, 'cover');
+          if (ebookFile) payload.ebook_path = await uploadAdminFile(ebookFile, 'ebook');
+
+          await api(id ? `/api/books/${id}` : '/api/books', {
+            method: id ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
           closeBookModal();
           showNotice(id ? 'Livro atualizado com sucesso.' : 'Livro adicionado ao catálogo.', 'success');
           await loadDashboard();

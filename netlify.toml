@@ -1,0 +1,23 @@
+[build]
+command = "npm run build:frontend"
+publish = "dist"
+functions = "netlify/functions"
+
+[functions]
+node_bundler = "esbuild"
+external_node_modules = ["express", "pg"]
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/api/:splat"
+status = 200
+
+[[redirects]]
+from = "/uploads/*"
+to = "/api/uploads/:splat"
+status = 200
+
+[[redirects]]
+from = "/admin"
+to = "/admin/index.html"
+status = 200

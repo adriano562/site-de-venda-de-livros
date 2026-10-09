@@ -26,6 +26,42 @@ function getPublicObjectUrl(bucket, objectPath) {
   return `${supabaseUrl}/storage/v1/object/public/${encodeURIComponent(bucket)}/${encodeObjectPath(objectPath)}`;
 }
 
+async function createSignedUpload(bucket, objectPath) {
+  const { supabaseUrl, serviceKey } = getStorageConfig();
+  const publicKey = process.env.SUPABASE_ANON_KEY;
+  if (!publicKey) {
+    throw new Error('Configure SUPABASE_ANON_KEY para habilitar uploads.');
+  }
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/upload/sign/${encodeURIComponent(bucket)}/${encodeObjectPath(objectPath)}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ upsert: false })
+  });
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Falha ao criar URL de upload no Supabase Storage (${response.status}): ${details}`);
+  }
+
+  const result = await response.json();
+  const signedPath = result.signedURL || result.signedUrl;
+  if (typeof signedPath !== 'string' || !signedPath) {
+    throw new Error('O Supabase Storage não retornou uma URL de upload assinada.');
+  }
+
+  const uploadUrl = new URL(
+    signedPath.startsWith('/') ? `/storage/v1${signedPath}` : signedPath,
+    supabaseUrl
+  );
+  if (uploadUrl.origin !== new URL(supabaseUrl).origin) {
+    throw new Error('O Supabase Storage retornou uma URL de upload inválida.');
+  }
+  return { uploadUrl: uploadUrl.toString(), publicKey };
+}
+
 async function uploadObject(bucket, objectPath, buffer, contentType) {
   const { serviceKey } = getStorageConfig();
   const response = await fetch(objectUrl(bucket, objectPath), {
@@ -124,6 +160,47 @@ async function privateFileExists(objectPath) {
   return true;
 }
 
+async function isValidPrivatePdf(objectPath) {
+  if (typeof objectPath !== 'string' || !objectPath) return false;
+  if (path.isAbsolute(objectPath)) {
+    const handle = await fs.open(objectPath, 'r');
+    try {
+      const header = Buffer.alloc(5);
+      const { bytesRead } = await handle.read(header, 0, 5, 0);
+      return bytesRead === 5 && header.toString('ascii') === '%PDF-';
+    } finally {
+      await handle.close();
+    }
+  }
+  if (!objectPath.startsWith('ebooks/')) return false;
+
+  const { serviceKey } = getStorageConfig();
+  const response = await fetch(objectUrl('ebooks', objectPath.slice('ebooks/'.length)), {
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      Range: 'bytes=0-4'
+    }
+  });
+  if (response.status !== 206 && !response.ok) return false;
+  if (!response.body) return false;
+  const reader = response.body.getReader();
+  const header = new Uint8Array(5);
+  let bytesRead = 0;
+  try {
+    while (bytesRead < header.length) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const count = Math.min(value.length, header.length - bytesRead);
+      header.set(value.subarray(0, count), bytesRead);
+      bytesRead += count;
+    }
+  } finally {
+    await reader.cancel();
+  }
+  return bytesRead === 5 && Buffer.from(header).toString('ascii') === '%PDF-';
+}
+
 async function deleteObject(bucket, objectPath) {
   const { supabaseUrl, serviceKey } = getStorageConfig();
   const response = await fetch(`${supabaseUrl}/storage/v1/object/${encodeURIComponent(bucket)}`, {
@@ -143,9 +220,11 @@ async function deleteObject(bucket, objectPath) {
 
 module.exports = {
   deleteObject,
+  createSignedUpload,
   getPrivateFile,
   getPrivateFileStream,
   getPublicObjectUrl,
+  isValidPrivatePdf,
   privateFileExists,
   uploadObject
 };

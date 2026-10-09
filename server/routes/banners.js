@@ -1,13 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const crypto = require('crypto');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-const { deleteObject, getPublicObjectUrl, uploadObject } = require('../config/storage');
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const { getPublicObjectUrl } = require('../config/storage');
+const bannerPathPattern = /^banners\/[a-f\d-]{36}\.(?:jpe?g|png|webp)$/i;
 
 // GET /api/banners - Público (ativos) ou Admin (todos)
 router.get('/', async (req, res) => {
@@ -26,16 +22,13 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/banners - Admin
-router.post('/', auth, upload.single('image'), async (req, res) => {
-  let objectPath;
+router.post('/', auth, async (req, res) => {
   try {
-    const { title, subtitle, cta_text, cta_link, is_active, position } = req.body;
-    let image_url = null;
-    if (req.file) {
-      objectPath = `banner_${crypto.randomUUID()}${path.extname(req.file.originalname).toLowerCase()}`;
-      await uploadObject('uploads', objectPath, req.file.buffer, req.file.mimetype);
-      image_url = getPublicObjectUrl('uploads', objectPath);
+    const { title, subtitle, cta_text, cta_link, is_active, position, image_path } = req.body;
+    if (image_path && !bannerPathPattern.test(image_path)) {
+      return res.status(400).json({ error: 'Caminho da imagem inválido.' });
     }
+    const image_url = image_path ? getPublicObjectUrl('uploads', image_path) : null;
 
     const result = await pool.query(
       `INSERT INTO banners (title, subtitle, image_url, cta_text, cta_link, is_active, position)
@@ -44,34 +37,24 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    if (objectPath) {
-      try {
-        await deleteObject('uploads', objectPath);
-      } catch (cleanupError) {
-        console.error('Erro ao remover banner incompleto do Supabase Storage:', cleanupError);
-      }
-    }
     console.error('Erro ao criar banner:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
 // PUT /api/banners/:id - Admin
-router.put('/:id', auth, upload.single('image'), async (req, res) => {
-  let objectPath;
+router.put('/:id', auth, async (req, res) => {
   try {
-    const { title, subtitle, cta_text, cta_link, is_active, position } = req.body;
+    const { title, subtitle, cta_text, cta_link, is_active, position, image_path } = req.body;
+    if (image_path && !bannerPathPattern.test(image_path)) {
+      return res.status(400).json({ error: 'Caminho da imagem inválido.' });
+    }
     const existing = await pool.query('SELECT * FROM banners WHERE id = $1', [req.params.id]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Banner não encontrado.' });
     }
 
-    let image_url = existing.rows[0].image_url;
-    if (req.file) {
-      objectPath = `banner_${crypto.randomUUID()}${path.extname(req.file.originalname).toLowerCase()}`;
-      await uploadObject('uploads', objectPath, req.file.buffer, req.file.mimetype);
-      image_url = getPublicObjectUrl('uploads', objectPath);
-    }
+    const image_url = image_path ? getPublicObjectUrl('uploads', image_path) : existing.rows[0].image_url;
 
     const result = await pool.query(
       `UPDATE banners SET title=$1, subtitle=$2, image_url=$3, cta_text=$4, cta_link=$5, is_active=$6, position=$7
@@ -89,13 +72,6 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    if (objectPath) {
-      try {
-        await deleteObject('uploads', objectPath);
-      } catch (cleanupError) {
-        console.error('Erro ao remover banner incompleto do Supabase Storage:', cleanupError);
-      }
-    }
     console.error('Erro ao editar banner:', err);
     res.status(500).json({ error: 'Erro interno.' });
   }
