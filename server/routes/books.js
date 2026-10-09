@@ -6,9 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
-
-const ebookDir = path.join(__dirname, '..', '.private-books');
-fs.mkdirSync(ebookDir, { recursive: true });
+const { uploadsDir, ebookDir } = require('../config/storage');
 
 async function removeUploadedFiles(files) {
   await Promise.all(files.map(async (file) => {
@@ -21,7 +19,7 @@ async function removeUploadedFiles(files) {
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, file.fieldname === 'ebook' ? ebookDir : path.join(__dirname, '..', 'uploads')),
+  destination: (req, file, cb) => cb(null, file.fieldname === 'ebook' ? ebookDir : uploadsDir),
   filename: (req, file, cb) => {
     if (file.fieldname === 'ebook') {
       return cb(null, `ebook_${crypto.randomUUID()}.pdf`);

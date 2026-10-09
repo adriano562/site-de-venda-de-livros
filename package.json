@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build:frontend": "node scripts/build-frontend.js",
+    "start": "node server/index.js",
     "test": "node --test"
   },
   "keywords": [],

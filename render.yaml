@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: nocturnal-api
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: nocturnal-storage
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nocturnal-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_DIR
+        value: /data
+
+databases:
+  - name: nocturnal-db
+    databaseName: nocturnal
+    user: nocturnal
+    plan: basic-256mb

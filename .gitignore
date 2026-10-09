@@ -1,5 +1,6 @@
 .env
 node_modules/
+dist/
 server/.private-books/
 .env
 node_modules

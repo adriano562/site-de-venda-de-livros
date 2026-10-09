@@ -4,9 +4,10 @@ const multer = require('multer');
 const path = require('path');
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
+const { uploadsDir } = require('../config/storage');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads')),
+  destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `banner_${Date.now()}${ext}`);

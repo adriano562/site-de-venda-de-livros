@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/uploads/:path*",
+      "destination": "/api/uploads/:path*"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    }
+  ]
+}
